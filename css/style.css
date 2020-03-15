@@ -1,0 +1,221 @@
+body {
+  font-family: "Times", "Georgia", serif;
+  display: grid;
+  height: 100vh;
+  padding: 0;
+  margin: 0;
+  grid-gap: 0;
+  grid-template-areas:
+    "header legend"
+    "main   legend"
+    "nav    nav";
+  grid-template-columns: 1fr 0;
+  grid-template-rows: 0 auto max-content;
+  color: rgba(0, 0, 0, 0.7);
+}
+
+#creator {
+  position: absolute;
+  left: 2em;
+  bottom: 5em;
+  font-family: sans-serif;
+  font-size: small;
+}
+
+#creator a {
+  color: black;
+}
+
+@media only screen and (min-width: 500px) {
+  body {
+    grid-template-areas:
+      "header legend"
+      "main   legend"
+      "nav    nav";
+    grid-template-columns: 1fr auto;
+    grid-template-rows: 0 auto max-content;
+  }
+}
+
+@media only screen and (min-width: 700px) {
+  body {
+    grid-template-areas:
+      "nav header legend"
+      "nav main   legend";
+    grid-template-columns: max-content 1fr auto;
+    grid-template-rows: 0 auto;
+  }
+
+  #creator {
+    bottom: 2rem;
+    left: 5rem;
+  }
+}
+
+main { grid-area: main; }
+
+nav,
+#legend {
+  background-color: #eee;
+}
+
+h1 {
+  font-weight: normal;
+  margin: 0;
+  padding: 0;
+}
+
+header {
+  grid-area: header;
+  text-align: left;
+  margin: 0;
+  padding-left: 2vw;
+  padding-top: 0;
+}
+
+@media only screen and (min-width: 700px) {
+  h1 { font-size: 3vw; }
+  header { font-size: 2vw; }
+}
+
+nav {
+  grid-area: nav;
+  display: grid;
+  grid-gap: 0;
+  grid-template-rows: 1;
+  grid-template-columns: repeat(auto-fit, max-content);
+  grid-template-areas: "help log normalize";
+}
+
+@media only screen and (min-width: 700px) {
+  nav {
+    padding-top: 1em;
+    grid-template-rows: repeat(3, max-content);
+    grid-template-columns: repeat(1, max-content);
+    grid-template-areas:
+      "help"
+      "log"
+      "normalize";
+  }
+}
+
+#log { grid-area: log; }
+#normalize { grid-area: normalize; }
+
+nav > div {
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: auto;
+  margin-bottom: auto;
+  font-size: large;
+  border-radius: 25px;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  text-align: center;
+  line-height: 45px;
+  font-family: "Arial", sans-serif;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+#help {
+  grid-area: help;
+  font-weight: bold;
+  font-family: "Georgia", serif;
+}
+
+nav > div > div {
+  border-radius: 1em;
+  top: 2rem;
+  display: block;
+  font-family: "Times", "Georgia", serif;
+  font-size: large;
+  font-weight: normal;
+  left: 6rem;
+  padding: 0.5em 1em 0.5em 1em;
+  position: absolute;
+  text-align: left;
+  visibility: hidden;
+}
+
+nav > div:hover {
+  background-color: #cecef6;
+}
+
+nav > div:hover > div {
+  background-color: #cecef6;
+  visibility: visible;
+}
+
+@media only screen and (hover: none) {
+  nav > div:hover {
+    background-color: inherit;
+  }
+
+  nav > div:hover > div {
+    background-color: inherit;
+    visibility: hidden;
+  }
+}
+
+#legend {
+  grid-area: legend;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  display: grid;
+  grid-template-columns: repeat(1, 200px);
+  grid-template-rows: repeat(auto-fit, 50px);
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+@media only screen and (min-width: 924px) {
+  #legend {
+    grid-template-columns: repeat(1, 200px);
+  }
+}
+
+@media only screen and (min-width: 1024px) {
+  #legend {
+    grid-template-columns: repeat(1, 200px);
+  }
+}
+
+#legend svg {
+  box-sizing: border-box;
+  overflow: hidden;
+  width: 200px;
+  height: 50px;
+  border: 0;
+}
+
+.center-screen {
+  height: 99%;
+  overflow: hidden;
+  width: 100%;
+}
+
+circle {
+  stroke: none;
+}
+
+circle.highlight {
+  stroke: black;
+  stroke-width: 2px;
+}
+
+circle.nonhighlight {
+  filter: grayscale(100%);
+}
+
+line {
+  stroke: #000;
+  stroke-width: 2px;
+}
+
+line.nonhighlight {
+  stroke-opacity: 0.25;
+}

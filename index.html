@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>COVID-19: Time series per capita</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css"/>
+    <link rel="stylesheet" href="css/style.css"/>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+  </head>
+  <body>
+    <header>
+      <h1>
+        COVID-19 plots
+      </h1>
+    </header>
+    <div id="creator">by <a href="https://holgerdell.com">Holger Dell</a> (2020). Source code on <a href="https://github.com/holgerdell/COVID-19-plots">github</a>.</div>
+    <nav id="nav">
+      <div id="help">
+        ?
+        <div>You can use URL parameters, for example:
+          index.html?normalize=true&amp;logplot=true&amp;countries=China;Italy;Korea,%20South
+        </div>
+      </div>
+      <!--
+      <div id="log">
+        log
+        <div>Switch to log-plot [l]</div>
+      </div>
+      <div id="normalize">
+        n
+        <div>Normalize by population (default) [n]</div>
+      </div>-->
+    </nav>
+    <main id="main"><svg class="center-screen"></svg></main>
+    <aside id="legend">
+    </aside>
+    <script src="COVID-19-plots.js"></script>
+  </body>
+</html>
