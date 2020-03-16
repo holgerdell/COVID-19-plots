@@ -90,17 +90,15 @@ nav {
 @media only screen and (min-width: 700px) {
   nav {
     padding-top: 1em;
-    grid-template-rows: repeat(3, max-content);
+    grid-template-rows: repeat(20, max-content);
     grid-template-columns: repeat(1, max-content);
     grid-template-areas:
       "help"
       "log"
-      "normalize";
+      "normalize"
+      "datasets";
   }
 }
-
-#log { grid-area: log; }
-#normalize { grid-area: normalize; }
 
 nav > div {
   margin-left: auto;
@@ -121,20 +119,19 @@ nav > div {
   user-select: none;
 }
 
-#help {
-  grid-area: help;
-  font-weight: bold;
-  font-family: "Georgia", serif;
-}
+#help { grid-area: help; }
+#log { grid-area: log; }
+#normalize { grid-area: normalize; }
+#datasets { grid-area: datasets; }
 
 nav > div > div {
   border-radius: 1em;
-  top: 2rem;
+  top: 6rem;
   display: block;
   font-family: "Times", "Georgia", serif;
   font-size: large;
   font-weight: normal;
-  left: 6rem;
+  left: 7rem;
   padding: 0.5em 1em 0.5em 1em;
   position: absolute;
   text-align: left;
@@ -163,33 +160,32 @@ nav > div:hover > div {
 
 #legend {
   grid-area: legend;
+  margin: 0;
+  border: 0;
   padding-top: 1rem;
   padding-bottom: 1rem;
+  padding-left: 0;
+  padding-right: 0;
   display: grid;
-  grid-template-columns: repeat(1, 200px);
+  width: 200px;
+  grid-template-columns: repeat(1, 1fr);
   grid-template-rows: repeat(auto-fit, 50px);
   overflow-x: hidden;
   overflow-y: scroll;
 }
 
-@media only screen and (min-width: 924px) {
-  #legend {
-    grid-template-columns: repeat(1, 200px);
-  }
-}
-
-@media only screen and (min-width: 1024px) {
-  #legend {
-    grid-template-columns: repeat(1, 200px);
-  }
-}
-
 #legend svg {
   box-sizing: border-box;
   overflow: hidden;
-  width: 200px;
   height: 50px;
+  width: 200px;
   border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+#legend svg:hover {
+  background-color: #fff;
 }
 
 .center-screen {
