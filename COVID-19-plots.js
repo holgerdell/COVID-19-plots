@@ -349,9 +349,9 @@ async function main() {
 
   document.addEventListener("keydown", (event) => {
     switch (event.key) {
-    case "l": switchlog();
-    case "n": switchnormalize();
-    case "d": switchdatasets();
+    case "l": switchlog(); break;
+    case "n": switchnormalize(); break;
+    case "d": switchdatasets(); break;
     }
   });
 }
