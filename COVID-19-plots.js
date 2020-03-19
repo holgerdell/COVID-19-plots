@@ -151,6 +151,29 @@ function setDisplayedUrlQuerystring(querystring) {
   }
 }
 
+/** Get a nice label for the y-axis
+  * @param {Dictionary} state is the current state
+  *
+  * @return {String} human-readable description of the scale of the y-axis
+  */
+function ylabel(state) {
+  let ylabel = "";
+  if (state.dataset == "jh_Confirmed") {
+    ylabel ="Confirmed Infections";
+  } else if (state.dataset == "jh_Deaths") {
+    ylabel ="Confirmed Deaths";
+  } else if (state.dataset == "jh_Recovered") {
+    ylabel ="Confirmed Recovered";
+  }
+  if (state.normalize) {
+    ylabel += " (per 100,000 inhabitants)";
+  }
+  ylabel += " [dataset "+state.dataset+"]";
+  if (state.logplot) {
+    ylabel += " [log-plot]";
+  }
+  return ylabel;
+}
 
 /** Given a value and country, return normalized value (if desired)
   * @param {Number} value is a numerical value for the country
@@ -160,19 +183,11 @@ function setDisplayedUrlQuerystring(querystring) {
   */
 function rescale(value, country) {
   if (state.normalize) {
-    value = value * 1000000.0
+    value = value * 100000.0
       / parseInt(data["Country information"][country]["Population"]);
-  }
-  if (state.logplot) {
-    if (value > 0) {
-      value = Math.log(value);
-    } else {
-      value = NaN;
-    }
   }
   return value;
 }
-
 
 /** This function is called when the model state has changed.
   * Its purpose is to update the view state.
@@ -190,7 +205,7 @@ function onStateChange() {
   }
   const width = document.getElementById("main").offsetWidth;
   const height = document.getElementById("main").offsetHeight;
-  const margin = ({top: 70, right: 20, bottom: 80, left: 50});
+  const margin = ({top: 80, right: 20, bottom: 80, left: 50});
   const svg = d3.select("main > svg");
   svg.html(null); // delete all children
 
@@ -206,65 +221,53 @@ function onStateChange() {
     }
   }
 
+  /* x is a function that maps Date objects to x-coordinates on-screen */
   const x = d3.scaleUtc()
     .domain(d3.extent(data["Time series"], (e) => e["Date"]))
     .range([margin.left, width - margin.right]);
 
-  const xAxis = (g) => g
-    .attr("transform", `translate(0,${height - margin.bottom})`)
-    .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0));
-
-  svg.append("g").call(xAxis);
+  /* draw the x-axis */
+  svg.append("g")
+    .call(d3.axisBottom(x))
+    .attr("transform", `translate(0,${height - margin.bottom})`);
 
   console.log("Using dataset", state.dataset);
 
   let ymax = -Infinity;
   let ymin = Infinity;
-  for (let i in state.countries) {
-    if (state.countries.hasOwnProperty(i)) {
-      const c = state.countries[i];
-      const n = d3.max(data["Time series"],
-        (e) => rescale(e[state.dataset][c], c));
-      console.log("Max number for", c, "is", n);
-      if (n > ymax) ymax = n;
-      const m = d3.min(data["Time series"],
-        (e) => rescale(e[state.dataset][c], c));
-      if (m < ymin) ymin = m;
-    }
+  for (let i=0; i < state.countries.length; i++) {
+    const c = state.countries[i];
+    const n = d3.max(data["Time series"],
+      (e) => rescale(e[state.dataset][c], c));
+    console.log("Max number for", c, "is", n);
+    if (n > ymax) ymax = n;
+    const m = d3.min(data["Time series"],
+      (e) => {
+        const m = rescale(e[state.dataset][c], c);
+        if (m > 0) return m;
+        else return null;
+      });
+    if (m < ymin) ymin = m;
   }
   console.log("Domain from", ymin, "to", ymax);
-  const y = d3.scaleLinear()
+
+  /* y is a function that maps values to y-coordinates on-screen */
+  const y = ((state.logplot) ? d3.scaleLog() : d3.scaleLinear())
     .domain([ymin, ymax]).nice()
     .range([height - margin.bottom, margin.top]);
 
-  let ylabel = "";
-  if (state.dataset == "jh_Confirmed") {
-    ylabel ="Confirmed Infections";
-  } else if (state.dataset == "jh_Deaths") {
-    ylabel ="Confirmed Deaths";
-  } else if (state.dataset == "jh_Recovered") {
-    ylabel ="Confirmed Recovered";
-  }
-  if (state.normalize) {
-    ylabel += " (per 1 million inhabitants)";
-  }
-  if (state.logplot) {
-    ylabel = "Log of " + ylabel;
-  }
-  ylabel += " [dataset "+state.dataset+"]";
-
-  const yAxis = (g) => g
-    .attr("transform", `translate(${margin.left},0)`)
+  /* draw the y-axis */
+  svg.append("g")
     .call(d3.axisLeft(y))
+    .attr("transform", `translate(${margin.left},0)`)
     .call((g) => g.select(".domain").remove())
     .call((g) => g.select(".tick:last-of-type text").clone()
       .attr("x", 3)
       .attr("text-anchor", "start")
       .attr("font-weight", "bold")
-      .text(ylabel));
+      .text(ylabel(state)));
 
-  svg.append("g").call(yAxis);
-
+  /* draw the plot for each country */
   for (let i=0; i < state.countries.length; i++) {
     const c = state.countries[i];
 
@@ -272,7 +275,7 @@ function onStateChange() {
     const countryData = [];
     for (let j=0; j < data["Time series"].length; j++) {
       const d = data["Time series"][j];
-      if (!isNaN(rescale(d[state.dataset][c], c))) {
+      if (d[state.dataset][c]>0) {
         countryData.push({
           date: d["Date"],
           value: d[state.dataset][c],
@@ -285,7 +288,6 @@ function onStateChange() {
     const line = d3.line()
       .x((d) => x(d.date))
       .y((d) => y(rescale(d.value, c)));
-
 
     svg.append("path")
       .datum(countryData)
@@ -329,29 +331,40 @@ function onStateChange() {
       .attr("text-anchor", "start")
       .attr("x", 60).attr("y", 25)
       .text(state.countries[i]);
-    item.on("click", function(_, _) {
-      state.countries = state.countries.filter(function(value, index, arr) {
-        return value !== state.countries[i];
+    item
+      .on("click", function(_, _) {
+        state.countries = state.countries.filter(function(value, index, arr) {
+          return value !== state.countries[i];
+        });
+        onStateChange();
+      })
+      .on("mouseover", function(_, _) {
+        svg.selectAll("circle")
+          .filter((d) => d.countryIndex === i)
+          .transition().attr("r", 2*style.plotCircleRadius);
+        svg.selectAll("path")
+          .filter((d) => (d && d[0].countryIndex === i))
+          .transition().attr("stroke-width", 2*style.plotLineStrokeWidth);
+        tooltip.html("Population: "
+          + data["Country information"][state.countries[i]]["Population"]
+            .toLocaleString());
+        return tooltip.style("visibility", "visible");
+      })
+      .on("mousemove", () => tooltip
+        .style("top", (d3.event.pageY-10)+"px")
+        .style("left", (d3.event.pageX+10)+"px"))
+      .on("mouseout", function(_, _) {
+        svg.selectAll("circle")
+          .filter((d) => d.countryIndex === i)
+          .transition().attr("r", style.plotCircleRadius);
+        svg.selectAll("path")
+          .filter((d) => (d && d[0].countryIndex === i))
+          .transition().attr("stroke-width", style.plotLineStrokeWidth);
+        return tooltip.style("visibility", "hidden");
       });
-      onStateChange();
-    });
-    item.on("mouseover", function(_, _) {
-      svg.selectAll("circle")
-        .filter((d) => d.countryIndex === i)
-        .transition().attr("r", 2*style.plotCircleRadius);
-      svg.selectAll("path")
-        .filter((d) => (d && d[0].countryIndex === i))
-        .transition().attr("stroke-width", 2*style.plotLineStrokeWidth);
-    });
-    item.on("mouseout", function(_, _) {
-      svg.selectAll("circle")
-        .filter((d) => d.countryIndex === i)
-        .transition().attr("r", style.plotCircleRadius);
-      svg.selectAll("path")
-        .filter((d) => (d && d[0].countryIndex === i))
-        .transition().attr("stroke-width", style.plotLineStrokeWidth);
-    });
   }
+
+  /* Draw currently inactive countries */
   Object.keys(data["Country information"]).forEach(function(key) {
     if (!(state.countries.includes(key))) {
       const item = legend.append("svg");
