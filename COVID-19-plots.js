@@ -156,7 +156,7 @@ function rescale(value, country) {
       / parseInt(data["Country information"][country]["Population"]);
   }
   if (state.logplot) {
-    if (value > 1) {
+    if (value > 0) {
       value = Math.log(value);
     } else {
       value = NaN;
