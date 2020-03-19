@@ -6,6 +6,14 @@ let state = {};
 /* The data never changes after it is put in this dict by the main function. */
 let data = {};
 
+/* Style configuration */
+const style = {
+  plotCircleRadius: 4,
+  plotLineStrokeWidth: 3,
+};
+
+/* Function to convert Date object to string */
+const formatDate = d3.timeFormat("%Y-%m-%d");
 
 /** Return all available datasets
   * @return {List} of Strings
@@ -252,27 +260,66 @@ function onStateChange() {
       .attr("font-weight", "bold")
       .text(ylabel));
 
-  svg.append("g")
-    .call(yAxis);
-
-  const line = (country) => d3.line()
-    .defined((d) => !isNaN(rescale(d[state.dataset][country], country)))
-    .x((d) => x(d["Date"]))
-    .y((d) => y(rescale(d[state.dataset][country], country)));
-
+  svg.append("g").call(yAxis);
 
   for (let i=0; i < state.countries.length; i++) {
     const c = state.countries[i];
+
+    /* Massage the data for this country */
+    const countryData = [];
+    for (let j=0; j < data["Time series"].length; j++) {
+      const d = data["Time series"][j];
+      if (!isNaN(rescale(d[state.dataset][c], c))) {
+        countryData.push({
+          date: d["Date"],
+          value: d[state.dataset][c],
+          country: c,
+          countryIndex: i,
+        });
+      }
+    }
+
+    const line = d3.line()
+      .x((d) => x(d.date))
+      .y((d) => y(rescale(d.value, c)));
+
+    const tooltip = d3.select("body").append("div")
+      .style("position", "absolute")
+      .style("z-index", "10")
+      .style("visibility", "hidden")
+      .style("background", "#fff")
+      .style("font-size", "large")
+      .text("a simple tooltip");
+
     svg.append("path")
-      .datum(data["Time series"])
+      .datum(countryData)
       .attr("fill", "none")
       .attr("stroke", color(i, state.countries.length))
-      .attr("stroke-width", 1.5)
-      .attr("stroke-linejoin", "round")
-      .attr("stroke-linecap", "round")
-      .attr("d", line(c));
+      .attr("stroke-width", style.plotLineStrokeWidth)
+      .attr("d", line);
+    svg.selectAll()
+      .data(countryData)
+      .enter()
+      .append("circle")
+      .attr("fill", color(i, state.countries.length))
+      .attr("r", style.plotCircleRadius)
+      .attr("cx", (d) => x(d.date))
+      .attr("cy", (d) => y(rescale(d.value, c)))
+      .on("mouseover", function(d, i) {
+        d3.select(this).attr("r", 2*style.plotCircleRadius);
+        tooltip.html(d.country
+          + "<br />Value: " + d.value
+          + "<br />Date: " + formatDate(d.date));
+        return tooltip.style("visibility", "visible");
+      })
+      .on("mousemove", () => tooltip
+        .style("top", (d3.event.pageY-10)+"px")
+        .style("left", (d3.event.pageX+10)+"px"))
+      .on("mouseout", function(d, i) {
+        d3.select(this).transition().attr("r", style.plotCircleRadius);
+        return tooltip.style("visibility", "hidden");
+      });
   }
-
 
   const legend = d3.select("#legend");
   legend.html(null); // delete all children
@@ -291,6 +338,22 @@ function onStateChange() {
         return value !== state.countries[i];
       });
       onStateChange();
+    });
+    item.on("mouseover", function(_, _) {
+      svg.selectAll("circle")
+        .filter((d) => d.countryIndex === i)
+        .transition().attr("r", 2*style.plotCircleRadius);
+      svg.selectAll("path")
+        .filter((d) => (d && d[0].countryIndex === i))
+        .transition().attr("stroke-width", 2*style.plotLineStrokeWidth);
+    });
+    item.on("mouseout", function(_, _) {
+      svg.selectAll("circle")
+        .filter((d) => d.countryIndex === i)
+        .transition().attr("r", style.plotCircleRadius);
+      svg.selectAll("path")
+        .filter((d) => (d && d[0].countryIndex === i))
+        .transition().attr("stroke-width", style.plotLineStrokeWidth);
     });
   }
   Object.keys(data["Country information"]).forEach(function(key) {

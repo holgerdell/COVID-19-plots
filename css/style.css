@@ -194,24 +194,9 @@ nav > div:hover > div {
   width: 100%;
 }
 
-circle {
-  stroke: none;
+path.plot {
+  fill: none;
 }
 
-circle.highlight {
-  stroke: black;
-  stroke-width: 2px;
-}
-
-circle.nonhighlight {
-  filter: grayscale(100%);
-}
-
-line {
-  stroke: #000;
-  stroke-width: 2px;
-}
-
-line.nonhighlight {
-  stroke-opacity: 0.25;
+circle.plot {
 }
