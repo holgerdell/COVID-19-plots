@@ -194,9 +194,13 @@ nav > div:hover > div {
   width: 100%;
 }
 
-path.plot {
-  fill: none;
-}
-
-circle.plot {
+#tooltip {
+  position: absolute;
+  z-index: 10;
+  visibility: hidden;
+  background: #dd0;
+  font-size: large;
+  padding: 0.5rem;
+  border: 2px solid;
+  border-radius: 10px;
 }

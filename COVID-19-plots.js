@@ -180,6 +180,9 @@ function rescale(value, country) {
 function onStateChange() {
   setDisplayedUrlQuerystring(makeUrlQuerystring(state));
 
+  const tooltip = d3.select("#tooltip");
+  tooltip.style("visibility", "hidden");
+
   if (!state.legend) {
     d3.select("#legend").style("display", "none");
   } else {
@@ -283,13 +286,6 @@ function onStateChange() {
       .x((d) => x(d.date))
       .y((d) => y(rescale(d.value, c)));
 
-    const tooltip = d3.select("body").append("div")
-      .style("position", "absolute")
-      .style("z-index", "10")
-      .style("visibility", "hidden")
-      .style("background", "#fff")
-      .style("font-size", "large")
-      .text("a simple tooltip");
 
     svg.append("path")
       .datum(countryData)
@@ -308,7 +304,7 @@ function onStateChange() {
       .on("mouseover", function(d, i) {
         d3.select(this).attr("r", 2*style.plotCircleRadius);
         tooltip.html(d.country
-          + "<br />Value: " + d.value
+          + "<br />Value: " + d.value.toLocaleString()
           + "<br />Date: " + formatDate(d.date));
         return tooltip.style("visibility", "visible");
       })
