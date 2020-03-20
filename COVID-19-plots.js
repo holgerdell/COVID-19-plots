@@ -291,15 +291,15 @@ function onStateChange() {
 
     svg.append("path")
       .datum(countryData)
-      .attr("fill", "none")
-      .attr("stroke", color(i, state.countries.length))
+      .style("fill", "none")
+      .style("stroke", color(i, state.countries.length))
       .attr("stroke-width", style.plotLineStrokeWidth)
       .attr("d", line);
     svg.selectAll()
       .data(countryData)
       .enter()
       .append("circle")
-      .attr("fill", color(i, state.countries.length))
+      .style("fill", color(i, state.countries.length))
       .attr("r", style.plotCircleRadius)
       .attr("cx", (d) => x(d.date))
       .attr("cy", (d) => y(rescale(d.value, c)))
