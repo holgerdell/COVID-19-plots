@@ -1,0 +1,4 @@
+python3 tools/get_and_massage_data.py > data/data.json ; git st; date
+git fetch git@github.com:holgerdell/COVID-19-plots.git
+git merge  FETCH_HEAD
+history -r hist
