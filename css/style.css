@@ -194,24 +194,13 @@ nav > div:hover > div {
   width: 100%;
 }
 
-circle {
-  stroke: none;
-}
-
-circle.highlight {
-  stroke: black;
-  stroke-width: 2px;
-}
-
-circle.nonhighlight {
-  filter: grayscale(100%);
-}
-
-line {
-  stroke: #000;
-  stroke-width: 2px;
-}
-
-line.nonhighlight {
-  stroke-opacity: 0.25;
+#tooltip {
+  position: absolute;
+  z-index: 10;
+  visibility: hidden;
+  background: #dd0;
+  font-size: large;
+  padding: 0.5rem;
+  border: 2px solid;
+  border-radius: 10px;
 }
