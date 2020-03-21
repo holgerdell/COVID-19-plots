@@ -1,5 +1,7 @@
 /* COVID-19-plots.js | MIT License | github.com/holgerdell/COVID-19-plots */
 
+const LEGEND_RADIUS = 20;
+
 /* We insist that the entire program's model state is stored in this dict. */
 let state = {};
 
@@ -320,7 +322,7 @@ function onStateChange() {
   for (let i=0; i < state.countries.length; i++) {
     const item = legend.append("svg");
     item.append("circle")
-      .attr("cx", 25).attr("cy", 25).attr("r", 25)
+      .attr("cx", 25).attr("cy", 25).attr("r", LEGEND_RADIUS)
       .style("fill", color(i, state.countries.length));
     item.append("text")
       .attr("dominant-baseline", "middle")
@@ -365,7 +367,7 @@ function onStateChange() {
     if (!(state.countries.includes(key))) {
       const item = legend.append("svg");
       item.append("circle")
-        .attr("cx", 25).attr("cy", 25).attr("r", 25)
+        .attr("cx", 25).attr("cy", 25).attr("r", LEGEND_RADIUS)
         .style("fill", "#ffffff");
       item.append("text")
         .attr("dominant-baseline", "middle")
