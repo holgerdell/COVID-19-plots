@@ -15,6 +15,10 @@
     "semi": ["error", "always"]
   },
   "globals": {
-    "d3": true
+    "d3": true,
+    "csse": true,
+    "countries": true,
+    "github": true,
+    "itertools": true
   }
 }

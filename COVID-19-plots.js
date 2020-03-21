@@ -381,50 +381,54 @@ function onStateChange() {
 }
 
 
-const parseDate = d3.timeParse("%Y-%m-%d");
-
-async function getData () {
-
-  const by_date = {};
-
-  const jh_countries = new Set();
+/** This function retrieves and massages the data
+  * @return {Dictionary} the data dictionary
+  */
+async function getData() {
+  const byDate = {};
+  const jhCountries = new Set();
 
   for ( const type of csse.types ) {
     const rows = await csse.load(type);
     for ( const row of rows ) {
       const datestring = row[csse.KEY_DATE];
-      if (by_date[datestring] === undefined) {
-        by_date[datestring] = {};
-        by_date[datestring][csse.KEY_DATE] = parseDate(datestring);
+      if (byDate[datestring] === undefined) {
+        byDate[datestring] = {};
+        byDate[datestring][csse.KEY_DATE] =
+          d3.timeParse("%Y-%m-%d")(datestring);
       }
-      by_date[datestring]['jh_'+type] = Object.fromEntries(itertools.filter(
+      byDate[datestring]["jh_"+type] = Object.fromEntries(itertools.filter(
         ([key, value]) => key !== csse.KEY_DATE,
         Object.entries(row),
       ));
-      for ( const country of itertools.filter(x => x !== csse.KEY_DATE, Object.keys(row))) {
-        jh_countries.add(country);
+      for (const country of
+        itertools.filter((x) => x !== csse.KEY_DATE, Object.keys(row))) {
+        jhCountries.add(country);
       }
     }
   }
 
   const timeseries = [];
 
-  for ( const datestring in by_date ) timeseries.push(by_date[datestring]);
+  for (const datestring in byDate) {
+    if (byDate.hasOwnProperty(datestring)) {
+      timeseries.push(byDate[datestring]);
+    }
+  }
 
-  timeseries.sort(csse.SORT_BY_DATE);
+  timeseries.sort(csse.SORT_byDate);
 
-  const pop = await countries.load(2016, jh_countries) ;
+  const pop = await countries.load(2016, jhCountries);
 
   return {
     "Time series": timeseries,
     "Country information": Object.fromEntries(itertools.map(
-      item => [item[countries.KEY_NAME], {
-        'Population': item[countries.KEY_VALUE],
-        'Country Code': item[countries.KEY_CODE],
+      (item) => [item[countries.KEY_NAME], {
+        "Population": item[countries.KEY_VALUE],
+        "Country Code": item[countries.KEY_CODE],
       }],
-    pop)),
+      pop)),
   };
-
 }
 
 /** The main function is called when the page has loaded */
