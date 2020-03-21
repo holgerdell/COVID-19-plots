@@ -3,6 +3,18 @@
 /* We insist that the entire program's model state is stored in this dict. */
 let state = {};
 
+/* This dictionary holds the default values for the state
+ * new toggles and options can simply be added here */
+const defaultState = {
+  "normalize": true,
+  "logplot": true,
+  "legend": true,
+  "dataset": "jh_Confirmed",
+  "countries": [
+    "China", "Italy", "Denmark", "Germany", "Sweden", "Greece", "France",
+  ],
+};
+
 /* The data never changes after it is put in this dict by the main function. */
 let data = {};
 
@@ -46,7 +58,6 @@ function color(obj, numObjects) {
   else return d3.color(d3.interpolateCool(2-fraction)).darker(0.2);
 }
 
-
 /** This function parses the URL parameters and returns an argv dictionary.
   * Also sets default values for known parameters.
   *
@@ -64,36 +75,25 @@ function parseUrlArgs() {
     argv[decode(match[1])] = decode(match[2]);
   }
 
-  if (argv.normalize) {
-    argv.normalize = (argv.normalize == "true");
-  } else {
-    argv.normalize = true;
-  }
-
-  if (argv.logplot) {
-    argv.logplot = (argv.logplot == "true");
-  } else {
-    argv.logplot = false;
-  }
-
-  if (argv.countries) {
-    argv.countries = argv.countries.split(";");
-  } else {
-    argv.countries = [
-      "China", "Italy", "Denmark", "Germany", "Sweden", "Greece", "France",
-    ];
-  }
-
-  if (argv.legend) {
-    argv.legend = (argv.legend == "true");
-  } else {
-    argv.legend = true;
-  }
-
-  if (! argv.dataset) {
-    argv.dataset = "jh_Confirmed";
-  }
-
+  Object.keys(defaultState).forEach(function(key) {
+    if (typeof defaultState[key] === "boolean") {
+      if (argv[key]) {
+        argv[key] = (argv[key] === "true");
+      } else {
+        argv[key] = defaultState[key];
+      }
+    } else if (typeof defaultState[key] === "string") {
+      if (! argv[key]) {
+        argv[key] = defaultState[key];
+      }
+    } else if (typeof defaultState[key] === "object") {
+      if (argv[key]) {
+        argv[key] = argv[key].split(";");
+      } else {
+        argv[key] = defaultState[key];
+      }
+    }
+  });
   return argv;
 }
 
@@ -104,33 +104,29 @@ function parseUrlArgs() {
   */
 function makeUrlQuerystring(argv) {
   let url = "";
-  if (argv.normalize) {
-    url += "normalize=true&";
-  } else {
-    url += "normalize=false&";
-  }
-  if (argv.legend) {
-    url += "legend=true&";
-  } else {
-    url += "legend=false&";
-  }
-  if (argv.logplot) {
-    url += "logplot=true&";
-  } else {
-    url += "logplot=false&";
-  }
-  url += "dataset=" + argv.dataset + "&";
-  url += "countries=";
-  for (let i in argv.countries) {
-    if (argv.countries.hasOwnProperty(i)) {
-      const c = state.countries[i];
-      url += c;
-      if (i < argv.countries.length - 1) {
-        url += ";";
+  Object.keys(defaultState).forEach(function(key) {
+    if (typeof defaultState[key] === "boolean"
+      || typeof defaultState[key] === "string") {
+      if (argv[key] !== defaultState[key]) {
+        url += key + "=" + argv[key] + "&";
+      }
+    } else if (typeof defaultState[key] === "object") {
+      if (argv[key] !== defaultState[key]) {
+        url += key + "=";
+        for (let i in argv[key]) {
+          if (argv[key].hasOwnProperty(i)) {
+            const c = argv[key][i];
+            url += c;
+            if (i < argv[key].length - 1) {
+              url += ";";
+            }
+          }
+        }
+        url += "&";
       }
     }
-  }
-  return url;
+  });
+  return url.slice(0, -1);
 }
 
 
@@ -146,7 +142,8 @@ function setDisplayedUrlQuerystring(querystring) {
 
     const updatedQueryString = querystring;
 
-    const updatedUri = baseUrl + "?" + updatedQueryString;
+    let updatedUri = baseUrl;
+    if (updatedQueryString != "") updatedUri += "?" + updatedQueryString;
     window.history.replaceState({}, document.title, updatedUri);
   }
 }
@@ -239,7 +236,6 @@ function onStateChange() {
     const c = state.countries[i];
     const n = d3.max(data["Time series"],
       (e) => rescale(e[state.dataset][c], c));
-    console.log("Max number for", c, "is", n);
     if (n > ymax) ymax = n;
     const m = d3.min(data["Time series"],
       (e) => {
