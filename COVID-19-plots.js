@@ -202,7 +202,7 @@ function onStateChange() {
   }
   const width = document.getElementById("main").offsetWidth;
   const height = document.getElementById("main").offsetHeight;
-  const margin = ({top: 80, right: 20, bottom: 80, left: 50});
+  const margin = ({top: 20, right: 20, bottom: 80, left: 50});
   const svg = d3.select("main > svg");
   svg.html(null); // delete all children
 
