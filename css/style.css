@@ -194,6 +194,19 @@ nav > div:hover > div {
   width: 100%;
 }
 
+.loading-animation {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: -56px;
+  margin-left: -56px;
+}
+
+.loading .loading-animation {
+  display: block;
+}
+
 #tooltip {
   position: absolute;
   z-index: 10;
