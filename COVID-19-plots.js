@@ -193,6 +193,8 @@ function onStateChange() {
   const tooltip = d3.select("#tooltip");
   tooltip.style("visibility", "hidden");
 
+  d3.select('body').classed('loading', false);
+
   if (!state.legend) {
     d3.select("#legend").style("display", "none");
   } else {

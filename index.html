@@ -4,10 +4,11 @@
     <meta charset="utf-8"/>
     <title>COVID-19: Time series per capita</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css"/>
+    <link rel="stylesheet" href="https://cdn.rawgit.com/tobiasahlin/SpinKit/master/spinkit.min.css"/>
     <link rel="stylesheet" href="css/style.css"/>
     <script src="https://d3js.org/d3.v5.min.js"></script>
   </head>
-  <body>
+  <body class="loading">
     <header>
       <h1>
         COVID-19 plots
@@ -34,7 +35,15 @@
         <div>Cycle through available datasets [d]</div>
       </div>
     </nav>
-    <main id="main"><svg class="center-screen"></svg></main>
+    <main id="main">
+      <div class="loading-animation sk-fold sk-center">
+        <div class="sk-fold-cube"></div>
+        <div class="sk-fold-cube"></div>
+        <div class="sk-fold-cube"></div>
+        <div class="sk-fold-cube"></div>
+      </div>
+      <svg class="center-screen"></svg>
+    </main>
     <aside id="legend">
     </aside>
     <div id="tooltip">empty tooltip</div>
