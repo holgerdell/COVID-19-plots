@@ -381,16 +381,57 @@ function onStateChange() {
 }
 
 
+const parseDate = d3.timeParse("%Y-%m-%d");
+
+async function getData () {
+
+  const by_date = {};
+
+  const jh_countries = new Set();
+
+  for ( const type of csse.types ) {
+    const rows = await csse.load(type);
+    for ( const row of rows ) {
+      const datestring = row[csse.KEY_DATE];
+      if (by_date[datestring] === undefined) {
+        by_date[datestring] = {};
+        by_date[datestring][csse.KEY_DATE] = parseDate(datestring);
+      }
+      by_date[datestring]['jh_'+type] = Object.fromEntries(itertools.filter(
+        ([key, value]) => key !== csse.KEY_DATE,
+        Object.entries(row),
+      ));
+      for ( const country of itertools.filter(x => x !== csse.KEY_DATE, Object.keys(row))) {
+        jh_countries.add(country);
+      }
+    }
+  }
+
+  const timeseries = [];
+
+  for ( const datestring in by_date ) timeseries.push(by_date[datestring]);
+
+  timeseries.sort(csse.SORT_BY_DATE);
+
+  const pop = await countries.load(2016, jh_countries) ;
+
+  return {
+    "Time series": timeseries,
+    "Country information": Object.fromEntries(itertools.map(
+      item => [item[countries.KEY_NAME], {
+        'Population': item[countries.KEY_VALUE],
+        'Country Code': item[countries.KEY_CODE],
+      }],
+    pop)),
+  };
+
+}
+
 /** The main function is called when the page has loaded */
 async function main() {
   state = parseUrlArgs();
-  data = await d3.json("data/data.json");
 
-  /* parse date information in data */
-  const parseDate = d3.timeParse("%Y-%m-%d");
-  for (let i = 0; i < data["Time series"].length; i++) {
-    data["Time series"][i]["Date"] = parseDate(data["Time series"][i]["Date"]);
-  }
+  data = await getData();
 
   onStateChange();
 
