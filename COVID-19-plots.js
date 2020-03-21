@@ -30,7 +30,7 @@ const style = {
   */
 function getDatasets() {
   /* This is a hack - should inspect data dictionary instead */
-  return ["jh_Confirmed", "jh_Deaths", "jh_Recovered"];
+  return csse.types.map(x => `jh_${x}`);
 }
 
 
