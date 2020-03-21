@@ -1,42 +1,27 @@
 "use strict";
 
 const countries = (() => {
-// Read mapping from Johns Hopkins country names to population.csv country names
+// Map country names from different sources to the display names on the right
   const NAME_MAPPING = {
     "Brunei": "Brunei Darussalam",
-    "Congo (Kinshasa)": "Congo, Dem. Rep.",
-    "Cruise Ship": null,
+    "Congo (Kinshasa)": "Democratic Republic of the Congo",
+    "Congo, Dem. Rep.": "Democratic Republic of the Congo",
     "Czechia": "Czech Republic",
-    "Egypt": "Egypt, Arab Rep.",
+    "Gambia, The": "The Gambia",
+    "Egypt, Arab Rep.": "Egypt",
     "Eswatini": "Swaziland",
-    "French Guiana": null,
-    "Guadeloupe": null,
-    "Guernsey": null,
-    "Holy See": null,
-    "Iran": "Iran, Islamic Rep.",
-    "Jersey": null,
-    "Korea, South": "Korea, Rep.",
-    "Martinique": null,
-    "North Macedonia": "Macedonia, FYR",
-    "Reunion": null,
-    "Russia": "Russian Federation",
+    "Iran, Islamic Rep.": "Iran",
+    "Bahamas, The": "The Bahamas",
+    "Korea, Rep.": "South Korea",
+    "Korea, South": "South Korea",
+    "Macedonia, FYR": "North Macedonia",
+    "Russian Federation": "Russia",
     "Saint Lucia": "St. Lucia",
     "Saint Vincent and the Grenadines": "St. Vincent and the Grenadines",
     "Slovakia": "Slovak Republic",
-    "Taiwan*": null,
     "US": "United States",
-    "Venezuela": "Venezuela, RB",
-    "occupied Palestinian territory": null,
+    "Venezuela, RB": "Venezuela",
   };
-
-  const NAME_REVERSE_MAPPING = {};
-
-  Object.keys(NAME_MAPPING).forEach(function(key) {
-    const value = NAME_MAPPING[key];
-    if ( ! (value === null) ) {
-      NAME_REVERSE_MAPPING[value] = key;
-    }
-  });
 
   const KEY_YEAR = "Year";
   const KEY_VALUE = "Value";
@@ -88,6 +73,7 @@ const countries = (() => {
     return status;
   }
 
+
   function* sanitize(rows) {
     for ( const old_row of rows ) {
       const new_row = {};
@@ -96,7 +82,7 @@ const countries = (() => {
         else if (column === KEY_VALUE) new_row[column] = parseInt(old_row[column], 10) ;
         else if (column === KEY_NAME) {
           const name = old_row[column];
-          new_row[column] = NAME_REVERSE_MAPPING[name] || name ;
+          new_row[column] = canonicalCountryName(name);
         }
         else {
           new_row[column] = old_row[column];
@@ -124,10 +110,20 @@ const countries = (() => {
     return url;
   };
 
+  /** Given the name of a country, returns its canonical name
+   * (that is, the one we are going to display)
+   * @param {String} country
+   * @return {String}
+   */
+  function canonicalCountryName(country) {
+    return NAME_MAPPING[country] || country;
+  }
+
   return {
     load,
     KEY_NAME,
     KEY_CODE,
     KEY_VALUE,
+    canonicalCountryName,
   };
 })();

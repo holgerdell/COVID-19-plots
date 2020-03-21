@@ -19,10 +19,8 @@ const defaultState = {
 let data = {};
 
 /* Style configuration */
-const style = {
-  plotCircleRadius: 4,
-  plotLineStrokeWidth: 3,
-};
+const PLOT_CIRCLE_RADIUS = 4;
+const PLOT_LINE_STROKE_WIDTH = 3;
 
 
 /** Return all available datasets
@@ -171,33 +169,32 @@ function ylabel(state) {
   return ylabel;
 }
 
-/** Given a value and country, return normalized value (if desired)
-  * @param {Number} value is a numerical value for the country
-  * @param {Number} country is the name of the country
-  *
-  * @return {Number} value normalized to incidence per 1 million inhabitants
-  */
-function rescale(value, country) {
-  if (state.normalize) {
-    value = value * 100000.0
-      / parseInt(data["Country information"][country]["Population"]);
-  }
-  return value;
-}
-
 
 /** This function returns a value of a given row of data["Time series"].
   * @param {Dictionary} row
-  * @param {String} dataset
   * @param {String} country
+  * @param {String} dataset
+  * @param {Boolean} normalize divide by population size or not?
   *
   * @return {Number}
- */
-function getValue(row, dataset, country) {
-  if (row[dataset] === undefined) {
-    return null;
+  */
+function getValue(
+  row,
+  country,
+  dataset = state.dataset,
+  normalize = state.normalize) {
+  if (row[dataset] === undefined || row[dataset][country] === undefined) {
+    return undefined;
   } else {
-    return row[dataset][country];
+    let value = row[dataset][country];
+    if (! typeof value === "number") {
+      console.log("Error:", dataset, country, value, "is not a number");
+    }
+    if (normalize) {
+      value = value * 100000.0
+        / parseInt(data["Country information"][country]["Population"]);
+    }
+    return value;
   }
 }
 
@@ -225,14 +222,11 @@ function onStateChange() {
   svg.html(null); // delete all children
 
   /* Check if all countries in the state are present in the data */
-  for (let i in state.countries) {
-    if (state.countries.hasOwnProperty(i)) {
-      const c = state.countries[i];
-      if (!(c in data["Country information"])) {
-        svg.append("text").attr("x", 100).attr("y", 200)
-          .text("ERROR: Did not find country '"+c+"' in data.");
-        return;
-      }
+  for (const c of state.countries) {
+    if (!(c in data["Country information"])) {
+      svg.append("text").attr("x", 100).attr("y", 200)
+        .text("ERROR: Did not find country '"+c+"' in data.");
+      return;
     }
   }
 
@@ -248,7 +242,7 @@ function onStateChange() {
 
   /* x is a function that maps Date objects to x-coordinates on-screen */
   const x = d3.scaleUtc()
-    .domain([xmin, xmax])
+    .domain([xmin, xmax]).nice()
     .range([margin.left, width - margin.right]);
 
   /* draw the x-axis */
@@ -262,16 +256,13 @@ function onStateChange() {
   let ymin = Infinity;
   for (let i=0; i < state.countries.length; i++) {
     const c = state.countries[i];
-    const n = d3.max(data["Time series"],
-      (e) => rescale(getValue(e, state.dataset, c), c));
-    if (n > ymax) ymax = n;
-    const m = d3.min(data["Time series"],
-      (e) => {
-        const m = rescale(getValue(e, state.dataset, c), c);
-        if (m > 0) return m;
-        else return null;
-      });
-    if (m < ymin) ymin = m;
+    for (const row of data["Time series"]) {
+      const value = getValue(
+        row, c, state.dataset, state.normalize
+      );
+      if (value !== undefined && value > ymax) ymax = value;
+      if (value !== undefined && value < ymin && value > 0) ymin = value;
+    };
   }
   console.log("Domain from", ymin, "to", ymax);
 
@@ -299,10 +290,11 @@ function onStateChange() {
     const countryData = [];
     for (let j=0; j < data["Time series"].length; j++) {
       const d = data["Time series"][j];
-      if (getValue(d, state.dataset, c)>0) {
+      const value = getValue(d, c, state.dataset, state.normalize);
+      if (value !== NaN && value !== undefined && value > 0) {
         countryData.push({
           date: d["Date"],
-          value: getValue(d, state.dataset, c),
+          value: value,
           country: c,
           countryIndex: i,
         });
@@ -311,24 +303,24 @@ function onStateChange() {
 
     const line = d3.line()
       .x((d) => x(d.date))
-      .y((d) => y(rescale(d.value, c)));
+      .y((d) => y(d.value));
 
     svg.append("path")
       .datum(countryData)
       .style("fill", "none")
       .style("stroke", color(i, state.countries.length))
-      .attr("stroke-width", style.plotLineStrokeWidth)
+      .attr("stroke-width", PLOT_LINE_STROKE_WIDTH)
       .attr("d", line);
     svg.selectAll()
       .data(countryData)
       .enter()
       .append("circle")
       .style("fill", color(i, state.countries.length))
-      .attr("r", style.plotCircleRadius)
+      .attr("r", PLOT_LINE_STROKE_WIDTH)
       .attr("cx", (d) => x(d.date))
-      .attr("cy", (d) => y(rescale(d.value, c)))
+      .attr("cy", (d) => y(d.value))
       .on("mouseover", function(d, i) {
-        d3.select(this).attr("r", 2*style.plotCircleRadius);
+        d3.select(this).attr("r", 2*PLOT_LINE_STROKE_WIDTH);
         tooltip.html(d.country
           + "<br />Value: " + d.value.toLocaleString()
           + "<br />Date: " + d3.timeFormat("%Y-%m-%d")(d.date));
@@ -338,7 +330,7 @@ function onStateChange() {
         .style("top", (d3.event.pageY-10)+"px")
         .style("left", (d3.event.pageX+10)+"px"))
       .on("mouseout", function(d, i) {
-        d3.select(this).transition().attr("r", style.plotCircleRadius);
+        d3.select(this).transition().attr("r", PLOT_LINE_STROKE_WIDTH);
         return tooltip.style("visibility", "hidden");
       });
   }
@@ -363,10 +355,10 @@ function onStateChange() {
       .on("mouseover", function(_, _) {
         svg.selectAll("circle")
           .filter((d) => d.countryIndex === i)
-          .transition().attr("r", 2*style.plotCircleRadius);
+          .transition().attr("r", 2*PLOT_LINE_STROKE_WIDTH);
         svg.selectAll("path")
-          .filter((d) => (d && d[0].countryIndex === i))
-          .transition().attr("stroke-width", 2*style.plotLineStrokeWidth);
+          .filter((d) => (d && d.length > 0 && d[0].countryIndex === i))
+          .transition().attr("stroke-width", 2*PLOT_LINE_STROKE_WIDTH);
         tooltip.html("Population: "
           + data["Country information"][state.countries[i]]["Population"]
             .toLocaleString());
@@ -378,10 +370,10 @@ function onStateChange() {
       .on("mouseout", function(_, _) {
         svg.selectAll("circle")
           .filter((d) => d.countryIndex === i)
-          .transition().attr("r", style.plotCircleRadius);
+          .transition().attr("r", PLOT_LINE_STROKE_WIDTH);
         svg.selectAll("path")
-          .filter((d) => (d && d[0].countryIndex === i))
-          .transition().attr("stroke-width", style.plotLineStrokeWidth);
+          .filter((d) => (d && d.length > 0 && d[0].countryIndex === i))
+          .transition().attr("stroke-width", PLOT_LINE_STROKE_WIDTH);
         return tooltip.style("visibility", "hidden");
       });
   }
@@ -454,27 +446,21 @@ async function getData() {
 
 
   const timeseries = [];
-
-  for (const datestring in byDate) {
-    if (byDate.hasOwnProperty(datestring)) {
-      timeseries.push(byDate[datestring]);
-    }
-  }
-
+  Object.keys(byDate).forEach(function(datestring) {
+    timeseries.push(byDate[datestring]);
+  });
   timeseries.sort(function(a, b) {
     return a["Date"] < b["Date"] ? -1 : a["Date"] > b["Date"] ? 1 : 0;
   });
 
-  const pop = await countries.load(2016, allCountries);
-
+  const population = await countries.load(2016, allCountries);
   return {
     "Time series": timeseries,
     "Country information": Object.fromEntries(itertools.map(
       (item) => [item[countries.KEY_NAME], {
         "Population": item[countries.KEY_VALUE],
         "Country Code": item[countries.KEY_CODE],
-      }],
-      pop)),
+      }], population)),
   };
 }
 

@@ -30,8 +30,8 @@ const owid = (() => {
     const byDate = {};
     for ( const row of rows ) {
       const datestring = row[KEY_DATE];
-      const country = row[KEY_COUNTRY];
-      const value = row[type];
+      const country = countries.canonicalCountryName(row[KEY_COUNTRY]);
+      const value = parseInt(row[type], 10);
 
       if (byDate[datestring] === undefined) {
         byDate[datestring] = {};

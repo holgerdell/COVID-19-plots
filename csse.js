@@ -43,7 +43,7 @@ const csse = (() => {
     for ( const old_row of rows ) {
       const new_row = {};
       for ( const column in old_row ) {
-        if (column === KEY_COUNTRY) new_row[column] = old_row[column] ;
+        if (column === KEY_COUNTRY) new_row[column] = countries.canonicalCountryName(old_row[column]);
         else if (column === KEY_STATE) new_row[column] = old_row[column] ;
         else if (column === KEY_LATITUDE) new_row[column] = old_row[column] ;
         else if (column === KEY_LONGITUDE) new_row[column] = old_row[column] ;
@@ -61,8 +61,7 @@ const csse = (() => {
   } ;
 
   function* aggregate_by_country (rows) {
-
-    const by_country = {} ;
+    const by_country = {};
 
     for ( const row of rows ) {
       const country = row[KEY_COUNTRY];
@@ -88,7 +87,6 @@ const csse = (() => {
     for ( const country in by_country ) {
       yield by_country[country];
     }
-
   } ;
 
   const KEY_FN_COUNTRY = (country, state, latitude, longitude) => country;
@@ -115,8 +113,18 @@ const csse = (() => {
           by_date[datestring][KEY_DATE] = datestring ;
         }
         by_date[datestring][key] = row[datestring];
-
       }
+    }
+
+    /* add world total */
+    for ( const datestring in by_date ) {
+      let world_total = 0;
+      Object.keys(by_date[datestring]).forEach(function(key) {
+        if (by_date[datestring][key] !== undefined && key !== KEY_DATE) {
+          world_total += by_date[datestring][key];
+        }
+      });
+      by_date[datestring]["World"] = world_total;
     }
 
     const timeseries = [];
