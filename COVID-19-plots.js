@@ -11,7 +11,7 @@ const defaultState = {
   "normalize": true,
   "logplot": true,
   "legend": true,
-  "dataset": "jh_Confirmed",
+  "dataset": "owid_total_cases",
   "countries": [
     "China", "Italy", "Denmark", "Germany", "Sweden", "Greece", "France",
   ],
@@ -32,7 +32,8 @@ const style = {
   */
 function getDatasets() {
   /* This is a hack - should inspect data dictionary instead */
-  return csse.types.map(x => `jh_${x}`);
+  return csse.types.map((x) => `jh_${x}`)
+    .concat(owid.types.map((x) => `owid_${x}`));
 }
 
 
@@ -186,6 +187,23 @@ function rescale(value, country) {
   return value;
 }
 
+
+/** This function returns a value of a given row of data["Time series"].
+  * @param {Dictionary} row
+  * @param {String} dataset
+  * @param {String} country
+  *
+  * @return {Number}
+ */
+function getValue(row, dataset, country) {
+  if (row[dataset] === undefined) {
+    return null;
+  } else {
+    return row[dataset][country];
+  }
+}
+
+
 /** This function is called when the model state has changed.
   * Its purpose is to update the view state.
  */
@@ -195,7 +213,7 @@ function onStateChange() {
   const tooltip = d3.select("#tooltip");
   tooltip.style("visibility", "hidden");
 
-  d3.select('body').classed('loading', false);
+  d3.select("body").classed("loading", false);
 
   if (!state.legend) {
     d3.select("#legend").style("display", "none");
@@ -220,9 +238,19 @@ function onStateChange() {
     }
   }
 
+  let xmax = -Infinity;
+  let xmin = Infinity;
+  Object.keys(data["Time series"]).forEach(function(datestring) {
+    if (data["Time series"][datestring][state.dataset]) {
+      const date = data["Time series"][datestring]["Date"];
+      if (date < xmin) xmin = date;
+      if (date > xmax) xmax = date;
+    }
+  });
+
   /* x is a function that maps Date objects to x-coordinates on-screen */
   const x = d3.scaleUtc()
-    .domain(d3.extent(data["Time series"], (e) => e["Date"]))
+    .domain([xmin, xmax])
     .range([margin.left, width - margin.right]);
 
   /* draw the x-axis */
@@ -237,11 +265,11 @@ function onStateChange() {
   for (let i=0; i < state.countries.length; i++) {
     const c = state.countries[i];
     const n = d3.max(data["Time series"],
-      (e) => rescale(e[state.dataset][c], c));
+      (e) => rescale(getValue(e, state.dataset, c), c));
     if (n > ymax) ymax = n;
     const m = d3.min(data["Time series"],
       (e) => {
-        const m = rescale(e[state.dataset][c], c);
+        const m = rescale(getValue(e, state.dataset, c), c);
         if (m > 0) return m;
         else return null;
       });
@@ -273,10 +301,10 @@ function onStateChange() {
     const countryData = [];
     for (let j=0; j < data["Time series"].length; j++) {
       const d = data["Time series"][j];
-      if (d[state.dataset][c]>0) {
+      if (getValue(d, state.dataset, c)>0) {
         countryData.push({
           date: d["Date"],
-          value: d[state.dataset][c],
+          value: getValue(d, state.dataset, c),
           country: c,
           countryIndex: i,
         });
@@ -388,7 +416,7 @@ function onStateChange() {
   */
 async function getData() {
   const byDate = {};
-  const jhCountries = new Set();
+  const allCountries = new Set();
 
   for ( const type of csse.types ) {
     const rows = await csse.load(type);
@@ -396,7 +424,7 @@ async function getData() {
       const datestring = row[csse.KEY_DATE];
       if (byDate[datestring] === undefined) {
         byDate[datestring] = {};
-        byDate[datestring][csse.KEY_DATE] =
+        byDate[datestring]["Date"] =
           d3.timeParse("%Y-%m-%d")(datestring);
       }
       byDate[datestring]["jh_"+type] = Object.fromEntries(itertools.filter(
@@ -405,10 +433,32 @@ async function getData() {
       ));
       for (const country of
         itertools.filter((x) => x !== csse.KEY_DATE, Object.keys(row))) {
-        jhCountries.add(country);
+        allCountries.add(country);
       }
     }
   }
+
+
+  for ( const type of owid.types ) {
+    const rows = await owid.load(type);
+    for ( const row of rows ) {
+      const datestring = row[owid.KEY_DATE];
+      if (byDate[datestring] === undefined) {
+        byDate[datestring] = {};
+        byDate[datestring]["Date"] =
+          d3.timeParse("%Y-%m-%d")(datestring);
+      }
+      byDate[datestring]["owid_"+type] = Object.fromEntries(itertools.filter(
+        ([key, value]) => key !== owid.KEY_DATE,
+        Object.entries(row),
+      ));
+      for (const country of
+        itertools.filter((x) => x !== owid.KEY_DATE, Object.keys(row))) {
+        allCountries.add(country);
+      }
+    }
+  }
+
 
   const timeseries = [];
 
@@ -418,9 +468,11 @@ async function getData() {
     }
   }
 
-  timeseries.sort(csse.SORT_byDate);
+  timeseries.sort(function(a, b) {
+    return a["Date"] < b["Date"] ? -1 : a["Date"] > b["Date"] ? 1 : 0;
+  });
 
-  const pop = await countries.load(2016, jhCountries);
+  const pop = await countries.load(2016, allCountries);
 
   return {
     "Time series": timeseries,
@@ -454,10 +506,10 @@ async function main() {
   };
   d3.select("#normalize").on("click", switchnormalize);
 
-  const switchdatasets = () => {
+  const switchdatasets = function(stepsize = 1) {
     const ds = getDatasets();
     const i = ds.indexOf(state.dataset);
-    state.dataset = ds[(i + 1) % ds.length];
+    state.dataset = ds[(i + stepsize + ds.length) % ds.length];
     onStateChange();
   };
   d3.select("#datasets").on("click", switchdatasets);
@@ -467,11 +519,11 @@ async function main() {
     case "l": switchlog(); break;
     case "n": switchnormalize(); break;
     case "d": switchdatasets(); break;
+    case "D": switchdatasets(-1); break;
     }
   });
 
   window.onresize = onStateChange;
-
 }
 
 window.onload = main;

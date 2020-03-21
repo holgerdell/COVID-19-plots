@@ -15,10 +15,11 @@
     "semi": ["error", "always"]
   },
   "globals": {
-    "d3": true,
-    "csse": true,
     "countries": true,
+    "csse": true,
+    "d3": true,
     "github": true,
-    "itertools": true
+    "itertools": true,
+    "owid": true
   }
 }
