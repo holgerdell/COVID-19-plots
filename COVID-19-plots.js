@@ -1,7 +1,5 @@
 /* COVID-19-plots.js | MIT License | github.com/holgerdell/COVID-19-plots */
 
-const LEGEND_RADIUS = 20;
-
 /* We insist that the entire program's model state is stored in this dict. */
 let state = {};
 
@@ -348,14 +346,12 @@ function onStateChange() {
   const legend = d3.select("#legend");
   legend.html(null); // delete all children
   for (let i=0; i < state.countries.length; i++) {
-    const item = legend.append("svg");
-    item.append("circle")
-      .attr("cx", 25).attr("cy", 25).attr("r", LEGEND_RADIUS)
-      .style("fill", color(i, state.countries.length));
-    item.append("text")
-      .attr("dominant-baseline", "middle")
-      .attr("text-anchor", "start")
-      .attr("x", 60).attr("y", 25)
+    const item = legend.append("div").classed("curve selected", true);
+    item.append("span")
+      .classed("avatar", true)
+      .style("background-color", color(i, state.countries.length));
+    item.append("span")
+      .classed("label", true)
       .text(state.countries[i]);
     item
       .on("click", function(_, _) {
@@ -393,14 +389,11 @@ function onStateChange() {
   /* Draw currently inactive countries */
   Object.keys(data["Country information"]).forEach(function(key) {
     if (!(state.countries.includes(key))) {
-      const item = legend.append("svg");
-      item.append("circle")
-        .attr("cx", 25).attr("cy", 25).attr("r", LEGEND_RADIUS)
-        .style("fill", "#ffffff");
-      item.append("text")
-        .attr("dominant-baseline", "middle")
-        .attr("text-anchor", "start")
-        .attr("x", 60).attr("y", 25)
+      const item = legend.append("div").classed("curve", true);
+      item.append("span")
+        .classed("avatar", true);
+      item.append("span")
+        .classed("label", true)
         .text(key);
       item.on("click", function(_, _) {
         state.countries.push(key);
