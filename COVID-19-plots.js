@@ -469,6 +469,9 @@ async function main() {
     case "d": switchdatasets(); break;
     }
   });
+
+  window.onresize = onStateChange;
+
 }
 
 window.onload = main;
