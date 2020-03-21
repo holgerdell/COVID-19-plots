@@ -24,8 +24,6 @@ const style = {
   plotLineStrokeWidth: 3,
 };
 
-/* Function to convert Date object to string */
-const formatDate = d3.timeFormat("%Y-%m-%d");
 
 /** Return all available datasets
   * @return {List} of Strings
@@ -303,7 +301,7 @@ function onStateChange() {
         d3.select(this).attr("r", 2*style.plotCircleRadius);
         tooltip.html(d.country
           + "<br />Value: " + d.value.toLocaleString()
-          + "<br />Date: " + formatDate(d.date));
+          + "<br />Date: " + d3.timeFormat("%Y-%m-%d")(d.date));
         return tooltip.style("visibility", "visible");
       })
       .on("mousemove", () => tooltip
