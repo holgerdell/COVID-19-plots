@@ -197,7 +197,7 @@ nav > div:hover > div {
 }
 
 #tooltip {
-  position: absolute;
+  position: fixed;
   z-index: 10;
   visibility: hidden;
   background: #dd0;
