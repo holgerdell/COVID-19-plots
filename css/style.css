@@ -59,6 +59,51 @@ nav,
   background-color: #eee;
 }
 
+#legend > .curve {
+  height: 40px;
+  line-height: 40px;
+  padding: 5px;
+  cursor: pointer;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+#legend > .curve:not(.selected):hover {
+  background-color: white;
+}
+
+#legend > .curve > span.avatar {
+  background-color: white;
+  display: block;
+  float: left;
+  font-size: large;
+  border-radius: 20px;
+  width: 40px;
+  height: 40px;
+  text-align: center;
+  line-height: 40px;
+  font-family: "Arial", sans-serif;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  margin-right: 15px;
+}
+
+#legend > .curve.selected:hover > span.avatar {
+  opacity: 0.5;
+}
+
+#legend > .curve:not(.selected):hover > span.avatar {
+  background-color: #eee;
+}
+
+#legend > .curve > span.label {
+  color: black;
+}
+
+
 h1 {
   font-weight: normal;
   margin: 0;
@@ -171,10 +216,6 @@ nav > div:hover > div {
   border: 0;
   margin: 0;
   padding: 0;
-}
-
-#legend svg:hover {
-  background-color: #fff;
 }
 
 .center-screen {
