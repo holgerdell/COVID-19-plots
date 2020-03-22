@@ -76,7 +76,6 @@ nav,
   overflow-y: scroll;
 }
 
-
 #legend > .choices > .curve {
   height: 40px;
   line-height: 40px;
@@ -127,9 +126,11 @@ nav,
   color: black;
 }
 
+/*
 #legend > .choices > .curve.selected > span.label {
-  /*font-weight: bold;*/
+  font-weight: bold;
 }
+*/
 
 #legend > .search {
   grid-area: search;
@@ -145,7 +146,6 @@ nav,
   height: 40px;
   line-height: 40px;
 }
-
 
 h1 {
   font-weight: normal;

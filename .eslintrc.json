@@ -19,7 +19,9 @@
     "csse": true,
     "d3": true,
     "github": true,
+    "functools": true,
     "itertools": true,
-    "owid": true
+    "owid": true,
+    "string": true
   }
 }

@@ -1,6 +1,6 @@
 /* COVID-19-plots.js | MIT License | github.com/holgerdell/COVID-19-plots */
 
-const DELAY_DEBOUNCE_SEARCH = 200 ;
+const DELAY_DEBOUNCE_SEARCH = 200;
 
 /* We insist that the entire program's model state is stored in this dict. */
 let state = {};
@@ -313,7 +313,7 @@ function onStateChange() {
       .enter()
       .append("circle")
       .style("fill", color(i, state.countries.length))
-      .attr("r", PLOT_LINE_STROKE_WIDTH)
+      .attr("r", PLOT_CIRCLE_RADIUS)
       .attr("cx", (d) => x(d.date))
       .attr("cy", (d) => y(d.value))
       .on("mouseover", function(d, i) {
@@ -327,7 +327,7 @@ function onStateChange() {
         .style("top", (d3.event.pageY-10)+"px")
         .style("left", (d3.event.pageX+10)+"px"))
       .on("mouseout", function(d, i) {
-        d3.select(this).transition().attr("r", PLOT_LINE_STROKE_WIDTH);
+        d3.select(this).transition().attr("r", PLOT_CIRCLE_RADIUS);
         return tooltip.style("visibility", "hidden");
       });
   }
@@ -339,7 +339,9 @@ function onStateChange() {
     item.append("span")
       .classed("avatar", true)
       .style("background-color", color(i, state.countries.length))
-      .text(data['Country information'][state.countries[i]][countries.KEY_CODE]);
+      .text(
+        data["Country information"][state.countries[i]][countries.KEY_CODE]
+      );
     item.append("span")
       .classed("label", true)
       .text(state.countries[i]);
@@ -351,12 +353,12 @@ function onStateChange() {
         onStateChange();
       })
       .on("mouseover", function(_, _) {
-        svg.selectAll("circle")
-          .filter((d) => d.countryIndex === i)
-          .transition().attr("r", 2*PLOT_LINE_STROKE_WIDTH);
         svg.selectAll("path")
           .filter((d) => (d && d.length > 0 && d[0].countryIndex === i))
           .transition().attr("stroke-width", 2*PLOT_LINE_STROKE_WIDTH);
+        svg.selectAll("circle")
+          .filter((d) => d.countryIndex === i)
+          .transition().attr("r", 2*PLOT_CIRCLE_RADIUS);
         tooltip.html("Population: "
           + data["Country information"][state.countries[i]]["Population"]
             .toLocaleString());
@@ -366,12 +368,12 @@ function onStateChange() {
         .style("top", (d3.event.pageY-10)+"px")
         .style("left", (d3.event.pageX+10)+"px"))
       .on("mouseout", function(_, _) {
-        svg.selectAll("circle")
-          .filter((d) => d.countryIndex === i)
-          .transition().attr("r", PLOT_LINE_STROKE_WIDTH);
         svg.selectAll("path")
           .filter((d) => (d && d.length > 0 && d[0].countryIndex === i))
           .transition().attr("stroke-width", PLOT_LINE_STROKE_WIDTH);
+        svg.selectAll("circle")
+          .filter((d) => d.countryIndex === i)
+          .transition().attr("r", PLOT_CIRCLE_RADIUS);
         return tooltip.style("visibility", "hidden");
       });
   }
@@ -382,7 +384,7 @@ function onStateChange() {
       const item = legend.append("div").classed("curve", true);
       item.append("span")
         .classed("avatar", true)
-        .text(data['Country information'][key][countries.KEY_CODE]);
+        .text(data["Country information"][key][countries.KEY_CODE]);
       item.append("span")
         .classed("label", true)
         .text(key);
@@ -397,9 +399,8 @@ function onStateChange() {
   const datalist = d3.select("#datalist-countries");
   datalist.html(null); // delete all children
   Object.keys(data["Country information"]).forEach(function(key) {
-    datalist.append("option").attr('value',key);
+    datalist.append("option").attr("value", key);
   });
-
 }
 
 
@@ -515,13 +516,13 @@ async function main() {
 
   const countries_code_map = new Map();
 
-  for (key in data["Country information"]) {
+  Object.keys(data["Country information"]).forEach(function(key) {
     const code = data["Country information"][key]["Country Code"];
     countries_code_map.set(code, key);
     countries_code_map.set(code.toLowerCase(), key);
-  }
+  });
 
-  const oninput = e => {
+  const oninput = (e) => {
     const value = e.target.value;
     const keys = [
       value,
@@ -535,28 +536,25 @@ async function main() {
       if (key in data["Country information"]) {
         if (state.countries.includes(key)) {
           state.countries = state.countries.filter(
-            item => item !== key
-          ) ;
-        }
-        else {
+            (item) => item !== key
+          );
+        } else {
           state.countries.push(key);
         }
-        e.target.value = '';
+        e.target.value = "";
         onStateChange();
         break;
       }
     }
-
   };
+  const oninput_debounced =
+    functools.debounce( oninput, DELAY_DEBOUNCE_SEARCH );
 
-  const oninput_debounced = functools.debounce( oninput , DELAY_DEBOUNCE_SEARCH );
+  document.getElementById( "search" )
+    .addEventListener("input", oninput_debounced);
 
-  document.getElementById( 'search' )
-    .addEventListener('input' , oninput_debounced) ;
-
-  document.getElementById( 'search' )
-    .addEventListener('keydown', e => { e.stopPropagation(); }) ;
-
+  document.getElementById( "search" )
+    .addEventListener("keydown", (e) => e.stopPropagation());
 }
 
 window.onload = main;
