@@ -162,7 +162,7 @@ nav {
   display: grid;
   grid-area: nav;
   grid-gap: 0;
-  grid-template-areas: "help log normalize datasets";
+  grid-template-areas: "help log normalize datasets align";
   grid-template-columns: repeat(auto-fit, max-content);
   grid-template-rows: 1;
 }
@@ -173,7 +173,8 @@ nav {
       "help"
       "log"
       "normalize"
-      "datasets";
+      "datasets"
+      "align";
     grid-template-columns: repeat(1, max-content);
     grid-template-rows: repeat(20, max-content);
     padding-top: 1em;
@@ -200,6 +201,7 @@ nav > div {
 #log { grid-area: log; }
 #normalize { grid-area: normalize; }
 #datasets { grid-area: datasets; }
+#align { grid-area: align; }
 
 nav > div > div {
   border-radius: 1em;
