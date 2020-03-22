@@ -57,21 +57,24 @@ function* sanitize(rows) {
 function* aggregateByCountry(rows) {
   const byDateCountry = itertools.group(rows, "datestring");
   for ( const datestring of Object.keys(byDateCountry) ) {
+    let worldTotal = 0;
     byDateCountry[datestring] =
       itertools.group(byDateCountry[datestring], "country");
-  }
-
-  for ( const datestring of Object.keys(byDateCountry) ) {
-    let worldTotal = 0;
     for ( const country of Object.keys(byDateCountry[datestring]) ) {
       const rows = byDateCountry[datestring][country];
-      const aggregatedRow = rows[0];
-      aggregatedRow.value = 0;
-      for (const row of rows) {
-        aggregatedRow.value += row.value;
+      if (rows.length > 0) {
+        const aggregatedRow = {
+          datestring: datestring,
+          country: rows[0].country,
+          value: 0,
+        };
+        aggregatedRow.value = 0;
+        for (const row of rows) {
+          aggregatedRow.value += row.value;
+        }
+        worldTotal += aggregatedRow.value;
+        yield aggregatedRow;
       }
-      worldTotal += aggregatedRow.value;
-      yield aggregatedRow;
     }
     yield {
       datestring: datestring,

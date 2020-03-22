@@ -251,7 +251,6 @@ function onStateChange() {
   let span = 1;
 
   state.countries.forEach((c, i) => {
-
     let first_event;
     /* Massage the data for this country */
     const countryData = [];
@@ -271,20 +270,17 @@ function onStateChange() {
         });
       }
     }
-
     massaged.push(countryData);
-
   });
 
 
   /* x is a function that maps Date objects to x-coordinates on-screen */
-  let x = null
+  let x = null;
   if (state.align) {
     x = d3.scaleLinear()
       .domain([0, span]).nice()
       .range([margin.left, width - margin.right]);
-  }
-  else {
+  } else {
     x = d3.scaleUtc()
       .domain([xmin, xmax])
       .range([margin.left, width - margin.right]);

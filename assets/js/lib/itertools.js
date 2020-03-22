@@ -47,10 +47,12 @@ export function* addField(rows, field, value) {
 export function group(rows, key) {
   const groups = {};
   for ( const row of rows ) {
-    if (groups[row[key]] === undefined) {
-      groups[row[key]] = [];
+    if (row[key] !== undefined) {
+      if (groups[row[key]] === undefined) {
+        groups[row[key]] = [];
+      }
+      groups[row[key]].push(row);
     }
-    groups[row[key]].push(row);
   }
   return groups;
 }
