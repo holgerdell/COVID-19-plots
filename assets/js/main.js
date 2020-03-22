@@ -440,67 +440,63 @@ function onStateChange() {
   * @return {Dictionary} the data dictionary
   */
 async function getData() {
-  const byDate = {};
-  const allCountries = new Set();
-
+  let rows = await owid.load();
   for ( const type of jh.types ) {
-    const rows = await jh.load(type);
-    for ( const row of rows ) {
-      const datestring = row[jh.KEY_DATE];
-      if (byDate[datestring] === undefined) {
-        byDate[datestring] = {};
-        byDate[datestring]["Date"] =
-          d3.timeParse("%Y-%m-%d")(datestring);
-      }
-      byDate[datestring]["jh_"+type] = Object.fromEntries(itertools.filter(
-        ([key, value]) => key !== jh.KEY_DATE,
-        Object.entries(row),
-      ));
-      for (const country of
-        itertools.filter((x) => x !== jh.KEY_DATE, Object.keys(row))) {
-        allCountries.add(country);
-      }
-    }
+    rows = rows.concat(await jh.load(type));
   }
 
-
-  for ( const type of owid.types ) {
-    const rows = await owid.load(type);
-    for ( const row of rows ) {
-      const datestring = row[owid.KEY_DATE];
-      if (byDate[datestring] === undefined) {
-        byDate[datestring] = {};
-        byDate[datestring]["Date"] =
-          d3.timeParse("%Y-%m-%d")(datestring);
-      }
-      byDate[datestring]["owid_"+type] = Object.fromEntries(itertools.filter(
-        ([key, value]) => key !== owid.KEY_DATE,
-        Object.entries(row),
-      ));
-      for (const country of
-        itertools.filter((x) => x !== owid.KEY_DATE, Object.keys(row))) {
-        allCountries.add(country);
-      }
-    }
+  for ( const row of rows ) {
+    row.date = d3.timeParse("%Y-%m-%d")(row.datestring);
   }
 
+  const allCountries = new Set();
+  for ( const row of rows ) {
+    allCountries.add(row.country);
+  }
 
-  const timeseries = [];
-  Object.keys(byDate).forEach(function(datestring) {
-    timeseries.push(byDate[datestring]);
-  });
+  const countryData = await countries.load(2016, allCountries);
+
+  /* now convert data to old data model (TODO: update consumers of getData()) */
+
+  /* turn into dictionary, with "datestrings" as keys */
+  const byDateSourceCountry = itertools.group(rows, "datestring");
+
+  for ( const datestring of Object.keys(byDateSourceCountry) ) {
+    /* turn into dictionary, with "source" as keys */
+    byDateSourceCountry[datestring] =
+      itertools.group(byDateSourceCountry[datestring], "source");
+    for ( const source of Object.keys(byDateSourceCountry[datestring]) ) {
+      /* turn into dictionary, with "country" as keys */
+      byDateSourceCountry[datestring][source] =
+        itertools.group(byDateSourceCountry[datestring][source], "country");
+      /* now turn the row object into row.value */
+      for ( const country
+        of Object.keys(byDateSourceCountry[datestring][source]) ) {
+        if (byDateSourceCountry[datestring][source][country].length !== 1) {
+          console.error(datestring, source, country,
+            byDateSourceCountry[datestring][source][country]);
+        }
+        byDateSourceCountry[datestring][source][country] =
+          byDateSourceCountry[datestring][source][country][0].value;
+      }
+    }
+    byDateSourceCountry[datestring]["Date"] =
+      d3.timeParse("%Y-%m-%d")(datestring);
+  }
+
+  /* now forget the top-level grouping by date, but sort by date */
+  const timeseries = Object.values(byDateSourceCountry);
   timeseries.sort(function(a, b) {
     return a["Date"] < b["Date"] ? -1 : a["Date"] > b["Date"] ? 1 : 0;
   });
 
-  const population = await countries.load(2016, allCountries);
   return {
     "Time series": timeseries,
     "Country information": Object.fromEntries(itertools.map(
-      (item) => [item[countries.KEY_NAME], {
-        "Population": item[countries.KEY_VALUE],
-        "Country Code": item[countries.KEY_CODE],
-      }], population)),
+      (item) => [item.country, {
+        "Population": item.population,
+        "Country Code": item.code,
+      }], countryData)),
   };
 }
 

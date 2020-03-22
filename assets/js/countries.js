@@ -5,15 +5,19 @@ const NAME_MAPPING = {
   "Brunei": "Brunei Darussalam",
   "Congo (Kinshasa)": "Democratic Republic of the Congo",
   "Congo, Dem. Rep.": "Democratic Republic of the Congo",
+  "Democratic Republic of Congo": "Democratic Republic of the Congo",
   "Czechia": "Czech Republic",
   "Gambia, The": "The Gambia",
+  "Gambia": "The Gambia",
   "Egypt, Arab Rep.": "Egypt",
   "Eswatini": "Swaziland",
   "Iran, Islamic Rep.": "Iran",
   "Bahamas, The": "The Bahamas",
+  "Bahamas": "The Bahamas",
   "Korea, Rep.": "South Korea",
   "Korea, South": "South Korea",
   "Macedonia, FYR": "North Macedonia",
+  "Macedonia": "North Macedonia",
   "Russian Federation": "Russia",
   "Saint Lucia": "St. Lucia",
   "Saint Vincent and the Grenadines": "St. Vincent and the Grenadines",
@@ -49,14 +53,20 @@ export const load = (year, names) => {
   * @return {Boolean}
   */
 function validate(names, rows) {
+  const foundNames = new Set();
+  for (const row of rows) {
+    foundNames.add(row.country);
+  }
   let status = true;
-  const foundNames = new Set(names);
-  for (const country of rows) {
-    if (! foundNames.has(country[KEY_NAME])) {
-      console.log(country[KEY_NAME], "was not found in population data!");
+  const notFound = new Set();
+  for (const name of names) {
+    if (! foundNames.has(name)) {
       status = false;
+      notFound.add(name);
     }
   }
+  console.log("Info: These country names were not found in population data:",
+    Array.from(notFound));
   return status;
 }
 
@@ -65,31 +75,23 @@ function validate(names, rows) {
  */
 function* sanitize(rows) {
   for ( const row of rows ) {
-    const newrow = {};
-    for ( const column in row ) {
-      if (column === KEY_YEAR) newrow[column] = parseInt(row[column], 10);
-      else if (column === KEY_VALUE) newrow[column] = parseInt(row[column], 10);
-      else if (column === KEY_NAME) {
-        const name = row[column];
-        newrow[column] = canonicalCountryName(name);
-      } else {
-        newrow[column] = row[column];
-      }
-    }
-    yield newrow;
+    yield {
+      country: canonicalCountryName(row[KEY_NAME]),
+      code: row[KEY_CODE],
+      population: parseInt(row[KEY_VALUE], 10),
+      year: parseInt(row[KEY_YEAR], 10),
+    };
   }
 }
 
-
 const selectYear = function(year, rows) {
-  return itertools.filter((row) => row[KEY_YEAR] === year, rows);
+  return itertools.filter((row) => row.year === year, rows);
 };
 
 const selectNames = function(names, rows) {
   const set = new Set(names);
-  return itertools.filter((row) => set.has(row[KEY_NAME]), rows);
+  return itertools.filter((row) => set.has(row.country), rows);
 };
-
 
 /** Given the name of a country, returns its canonical name
  * (that is, the one we are going to display)
