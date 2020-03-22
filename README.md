@@ -7,6 +7,31 @@ For example:
 
 URL parameter `dataset` can be set to `owid_total_cases` (default), `owid_total_deaths`, `jh_Confirmed`, `jh_Deaths`, and `jh_Recovered`.
 
+# Development
+
+Install the development tools:
+```bash
+yarn install
+```
+
+Start a http server for local development:
+```bash
+yarn run http-server
+```
+
+Manually run the CSS linter:
+```bash
+yarn run stylelint "**/*.css"
+```
+
+Manually run the JavaScript linter:
+```bash
+yarn run eslint "**/*.js"
+```
+
+Visual Studio Code provides the extensions [dbaeumer.vscode-eslint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) and [stylelint.vscode-stylelint](https://marketplace.visualstudio.com/items?itemName=stylelint.vscode-stylelint) for automatic linting.
+
+
 # Data Sources:
 
 - Our World in Data <https://ourworldindata.org/coronavirus-source-data> (which, in turn, is sourced from [European Centre for Disease Prevention and Control (ECDC)](https://www.ecdc.europa.eu/en/coronavirus))
