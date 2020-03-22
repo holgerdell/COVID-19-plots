@@ -1,9 +1,7 @@
 body {
-  font-family: "Times", "Georgia", serif;
+  color: rgba(0, 0, 0, 0.7);
   display: grid;
-  height: 100vh;
-  padding: 0;
-  margin: 0;
+  font-family: "Times", "Georgia", serif;
   grid-gap: 0;
   grid-template-areas:
     "header legend"
@@ -11,15 +9,17 @@ body {
     "nav    nav";
   grid-template-columns: 1fr 0;
   grid-template-rows: 0 auto max-content;
-  color: rgba(0, 0, 0, 0.7);
+  height: 100vh;
+  margin: 0;
+  padding: 0;
 }
 
 #creator {
-  position: absolute;
-  left: 2em;
   bottom: 5em;
   font-family: sans-serif;
   font-size: small;
+  left: 2em;
+  position: absolute;
 }
 
 #creator a {
@@ -69,21 +69,21 @@ nav,
 #legend > .choices {
   box-sizing: border-box;
   grid-area: choices;
-  padding-top: 5px;
-  width: 200px;
   height: calc(100vh - 60px);
   overflow-x: hidden;
   overflow-y: scroll;
+  padding-top: 5px;
+  width: 200px;
 }
 
 #legend > .choices > .curve {
+  cursor: pointer;
   height: 40px;
   line-height: 40px;
-  padding: 5px;
-  cursor: pointer;
   overflow: hidden;
-  white-space: nowrap;
+  padding: 5px;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 #legend > .choices > .curve:not(.selected):hover {
@@ -92,21 +92,21 @@ nav,
 
 #legend > .choices > .curve > span.avatar {
   background-color: white;
+  border-radius: 20px;
+  display: block;
+  float: left;
   font-family: monospace;
   font-size: 12px;
   font-weight: bold;
-  display: block;
-  float: left;
-  border-radius: 20px;
-  width: 40px;
   height: 40px;
-  text-align: center;
   line-height: 40px;
+  margin-right: 15px;
+  text-align: center;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
-  margin-right: 15px;
+  width: 40px;
 }
 
 #legend > .choices > .curve.selected > span.avatar {
@@ -122,8 +122,8 @@ nav,
 }
 
 #legend > .choices > .curve > span.label {
-  font-family: sans-serif;
   color: black;
+  font-family: sans-serif;
 }
 
 /*
@@ -138,13 +138,13 @@ nav,
 }
 
 #search {
-  display: block;
-  width: 180px; /* 200 - 2 * 10 */
-  box-sizing: border-box;
-  padding: 0 10px;
   border: none;
+  box-sizing: border-box;
+  display: block;
   height: 40px;
   line-height: 40px;
+  padding: 0 10px;
+  width: 180px; /* 200 - 2 * 10 */
 }
 
 h1 {
@@ -159,41 +159,41 @@ h1 {
 }
 
 nav {
-  grid-area: nav;
   display: grid;
+  grid-area: nav;
   grid-gap: 0;
-  grid-template-rows: 1;
-  grid-template-columns: repeat(auto-fit, max-content);
   grid-template-areas: "help log normalize datasets";
+  grid-template-columns: repeat(auto-fit, max-content);
+  grid-template-rows: 1;
 }
 
 @media only screen and (min-width: 700px) {
   nav {
-    padding-top: 1em;
-    grid-template-rows: repeat(20, max-content);
-    grid-template-columns: repeat(1, max-content);
     grid-template-areas:
       "help"
       "log"
       "normalize"
       "datasets";
+    grid-template-columns: repeat(1, max-content);
+    grid-template-rows: repeat(20, max-content);
+    padding-top: 1em;
   }
 }
 
 nav > div {
-  margin: 5px;
-  font-size: large;
   border-radius: 20px;
-  width: 40px;
-  height: 40px;
   cursor: pointer;
-  text-align: center;
-  line-height: 40px;
   font-family: "Arial", sans-serif;
+  font-size: large;
+  height: 40px;
+  line-height: 40px;
+  margin: 5px;
+  text-align: center;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+  width: 40px;
 }
 
 #help { grid-area: help; }
@@ -203,7 +203,6 @@ nav > div {
 
 nav > div > div {
   border-radius: 1em;
-  top: 6rem;
   display: block;
   font-family: "Times", "Georgia", serif;
   font-size: large;
@@ -212,6 +211,7 @@ nav > div > div {
   padding: 0.5em 1em 0.5em 1em;
   position: absolute;
   text-align: left;
+  top: 6rem;
   visibility: hidden;
 }
 
@@ -243,11 +243,11 @@ nav > div:hover > div {
 
 .loading-animation {
   display: none;
+  left: 50%;
+  margin-left: -56px;
+  margin-top: -56px;
   position: absolute;
   top: 50%;
-  left: 50%;
-  margin-top: -56px;
-  margin-left: -56px;
 }
 
 .loading .loading-animation {
@@ -255,12 +255,12 @@ nav > div:hover > div {
 }
 
 #tooltip {
-  position: fixed;
-  z-index: 10;
-  visibility: hidden;
   background: #dd0;
-  font-size: large;
-  padding: 0.5rem;
   border: 2px solid;
   border-radius: 10px;
+  font-size: large;
+  padding: 0.5rem;
+  position: fixed;
+  visibility: hidden;
+  z-index: 10;
 }
