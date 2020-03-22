@@ -1,5 +1,12 @@
 /* COVID-19-plots.js | MIT License | github.com/holgerdell/COVID-19-plots */
 
+import * as string from "./lib/string.js";
+import * as itertools from "./lib/itertools.js";
+import * as functools from "./lib/functools.js";
+import * as csse from "./csse.js";
+import * as countries from "./countries.js";
+import * as owid from "./owid.js";
+
 const DELAY_DEBOUNCE_SEARCH = 200;
 const MILLISECONDS_IN_A_DAY = 1000 * 60 * 60 * 24;
 
@@ -65,7 +72,7 @@ function color(obj, numObjects) {
   * @return {Dictionary} a dictionary of all arguments
   */
 function parseUrlArgs() {
-  let argv = {};
+  const argv = {};
   let match;
   const pl = /\+/g;
   const search = /([^&=]+)=?([^&]*)/g;
@@ -106,15 +113,15 @@ function parseUrlArgs() {
 function makeUrlQuerystring(argv) {
   let url = "";
   Object.keys(defaultState).forEach(function(key) {
-    if (typeof defaultState[key] === "boolean"
-      || typeof defaultState[key] === "string") {
+    if (typeof defaultState[key] === "boolean" ||
+      typeof defaultState[key] === "string") {
       if (argv[key] !== defaultState[key]) {
         url += key + "=" + argv[key] + "&";
       }
     } else if (typeof defaultState[key] === "object") {
       if (argv[key] !== defaultState[key]) {
         url += key + "=";
-        for (let i in argv[key]) {
+        for (const i in argv[key]) {
           if (argv[key].hasOwnProperty(i)) {
             const c = argv[key][i];
             url += c;
@@ -195,8 +202,8 @@ function getValue(
       console.log("Error:", dataset, country, value, "is not a number");
     }
     if (normalize) {
-      value = value * 100000.0
-        / parseInt(data["Country information"][country]["Population"], 10);
+      value = value * 100000.0 /
+        parseInt(data["Country information"][country]["Population"], 10);
     }
     return value;
   }
@@ -343,9 +350,9 @@ function onStateChange() {
       .attr("cy", (d) => y(d.y))
       .on("mouseover", function(d, i) {
         d3.select(this).attr("r", 2*PLOT_LINE_STROKE_WIDTH);
-        tooltip.html(d.country
-          + "<br />Value: " + d.value.toLocaleString()
-          + "<br />Date: " + d3.timeFormat("%Y-%m-%d")(d.date));
+        tooltip.html(d.country +
+          "<br />Value: " + d.value.toLocaleString() +
+          "<br />Date: " + d3.timeFormat("%Y-%m-%d")(d.date));
         return tooltip.style("visibility", "visible");
       })
       .on("mousemove", () => tooltip
@@ -371,28 +378,28 @@ function onStateChange() {
       .classed("label", true)
       .text(state.countries[i]);
     item
-      .on("click", function(_, _) {
+      .on("click", function(_) {
         state.countries = state.countries.filter(function(value, index, arr) {
           return value !== state.countries[i];
         });
         onStateChange();
       })
-      .on("mouseover", function(_, _) {
+      .on("mouseover", function(_) {
         svg.selectAll("path")
           .filter((d) => (d && d.length > 0 && d[0].countryIndex === i))
           .transition().attr("stroke-width", 2*PLOT_LINE_STROKE_WIDTH);
         svg.selectAll("circle")
           .filter((d) => d.countryIndex === i)
           .transition().attr("r", 2*PLOT_CIRCLE_RADIUS);
-        tooltip.html("Population: "
-          + data["Country information"][state.countries[i]]["Population"]
+        tooltip.html("Population: " +
+          data["Country information"][state.countries[i]]["Population"]
             .toLocaleString());
         return tooltip.style("visibility", "visible");
       })
       .on("mousemove", () => tooltip
         .style("top", (d3.event.pageY-10)+"px")
         .style("left", (d3.event.pageX+10)+"px"))
-      .on("mouseout", function(_, _) {
+      .on("mouseout", function(_) {
         svg.selectAll("path")
           .filter((d) => (d && d.length > 0 && d[0].countryIndex === i))
           .transition().attr("stroke-width", PLOT_LINE_STROKE_WIDTH);
@@ -413,7 +420,7 @@ function onStateChange() {
       item.append("span")
         .classed("label", true)
         .text(key);
-      item.on("click", function(_, _) {
+      item.on("click", function(_) {
         state.countries.push(key);
         onStateChange();
       });
@@ -545,12 +552,12 @@ async function main() {
 
   // Search feature
 
-  const countries_code_map = new Map();
+  const countriesCodeMap = new Map();
 
   Object.keys(data["Country information"]).forEach(function(key) {
     const code = data["Country information"][key]["Country Code"];
-    countries_code_map.set(code, key);
-    countries_code_map.set(code.toLowerCase(), key);
+    countriesCodeMap.set(code, key);
+    countriesCodeMap.set(code.toLowerCase(), key);
   });
 
   const oninput = (e) => {
@@ -560,7 +567,7 @@ async function main() {
       string.titlecase(value.toLowerCase()),
       string.capitalize(value.toLowerCase()),
       string.capitalizeFirstLetter(value.toLowerCase()),
-      countries_code_map.get(value),
+      countriesCodeMap.get(value),
     ];
 
     for ( const key of keys ) {
@@ -578,11 +585,12 @@ async function main() {
       }
     }
   };
-  const oninput_debounced =
-    functools.debounce( oninput, DELAY_DEBOUNCE_SEARCH );
 
   document.getElementById( "search" )
-    .addEventListener("input", oninput_debounced);
+    .addEventListener(
+      "input",
+      functools.debounce( oninput, DELAY_DEBOUNCE_SEARCH )
+    );
 
   document.getElementById( "search" )
     .addEventListener("keydown", (e) => e.stopPropagation());

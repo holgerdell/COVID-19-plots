@@ -21,10 +21,12 @@
       "es6": true
     },
     "parserOptions": {
-      "ecmaVersion": 2017
+      "ecmaVersion": 2017,
+      "sourceType": "module"
     },
     "extends": "google",
     "rules": {
+      "no-invalid-this": "off",
       "no-undef": "error",
       "indent": ["error", 2],
       "linebreak-style": ["error", "unix"],
@@ -32,14 +34,7 @@
       "semi": ["error", "always"]
     },
     "globals": {
-      "countries": true,
-      "csse": true,
-      "d3": true,
-      "github": true,
-      "functools": true,
-      "itertools": true,
-      "owid": true,
-      "string": true
+      "d3": true
     }
   },
   "stylelint": {
