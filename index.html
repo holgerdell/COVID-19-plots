@@ -9,7 +9,7 @@
     <script src="https://d3js.org/d3.v5.min.js"></script>
   </head>
   <body class="loading">
-    <div id="creator">by <a href="https://holgerdell.com">Holger Dell</a> (2020). Source code on <a href="https://github.com/holgerdell/COVID-19-plots">github</a>.</div>
+    <header></header>
     <nav id="nav">
       <div id="help">
         ?
@@ -38,10 +38,18 @@
         <div class="sk-fold-cube"></div>
       </div>
       <svg class="center-screen"></svg>
+      <div id="creator">by <a href="https://holgerdell.com">Holger Dell</a> (2020). Source code on <a href="https://github.com/holgerdell/COVID-19-plots">github</a>.</div>
     </main>
     <aside id="legend">
+      <div class="search">
+        <input id="search" type="text" autocomplete="off" list="datalist-countries" placeholder="+/- countries"/>
+        <datalist id="datalist-countries"></datalist>
+      </div>
+      <div class="choices"></div>
     </aside>
     <div id="tooltip">empty tooltip</div>
+    <script src="assets/js/lib/string.js"></script>
+    <script src="assets/js/lib/functools.js"></script>
     <script src="itertools.js"></script>
     <script src="github.js"></script>
     <script src="countries.js"></script>

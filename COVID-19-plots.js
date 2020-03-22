@@ -1,5 +1,7 @@
 /* COVID-19-plots.js | MIT License | github.com/holgerdell/COVID-19-plots */
 
+const DELAY_DEBOUNCE_SEARCH = 200 ;
+
 /* We insist that the entire program's model state is stored in this dict. */
 let state = {};
 
@@ -213,11 +215,6 @@ function onStateChange() {
 
   d3.select("body").classed("loading", false);
 
-  if (!state.legend) {
-    d3.select("#legend").style("display", "none");
-  } else {
-    d3.select("#legend").style("display", "grid");
-  }
   const width = document.getElementById("main").offsetWidth;
   const height = document.getElementById("main").offsetHeight;
   const margin = ({top: 20, right: 20, bottom: 60, left: 50});
@@ -343,13 +340,14 @@ function onStateChange() {
       });
   }
 
-  const legend = d3.select("#legend");
+  const legend = d3.select("#legend > .choices");
   legend.html(null); // delete all children
   for (let i=0; i < state.countries.length; i++) {
     const item = legend.append("div").classed("curve selected", true);
     item.append("span")
       .classed("avatar", true)
-      .style("background-color", color(i, state.countries.length));
+      .style("background-color", color(i, state.countries.length))
+      .text(data['Country information'][state.countries[i]][countries.KEY_CODE]);
     item.append("span")
       .classed("label", true)
       .text(state.countries[i]);
@@ -391,7 +389,8 @@ function onStateChange() {
     if (!(state.countries.includes(key))) {
       const item = legend.append("div").classed("curve", true);
       item.append("span")
-        .classed("avatar", true);
+        .classed("avatar", true)
+        .text(data['Country information'][key][countries.KEY_CODE]);
       item.append("span")
         .classed("label", true)
         .text(key);
@@ -401,6 +400,14 @@ function onStateChange() {
       });
     }
   });
+
+  // Populate datalist for search feature
+  const datalist = d3.select("#datalist-countries");
+  datalist.html(null); // delete all children
+  Object.keys(data["Country information"]).forEach(function(key) {
+    datalist.append("option").attr('value',key);
+  });
+
 }
 
 
@@ -517,6 +524,53 @@ async function main() {
   });
 
   window.onresize = onStateChange;
+
+  // Search feature
+
+  const countries_code_map = new Map();
+
+  for (key in data["Country information"]) {
+    const code = data["Country information"][key]["Country Code"];
+    countries_code_map.set(code, key);
+    countries_code_map.set(code.toLowerCase(), key);
+  }
+
+  const oninput = e => {
+    const value = e.target.value;
+    const keys = [
+      value,
+      string.titlecase(value.toLowerCase()),
+      string.capitalize(value.toLowerCase()),
+      string.capitalizeFirstLetter(value.toLowerCase()),
+      countries_code_map.get(value),
+    ];
+
+    for ( const key of keys ) {
+      if (key in data["Country information"]) {
+        if (state.countries.includes(key)) {
+          state.countries = state.countries.filter(
+            item => item !== key
+          ) ;
+        }
+        else {
+          state.countries.push(key);
+        }
+        e.target.value = '';
+        onStateChange();
+        break;
+      }
+    }
+
+  };
+
+  const oninput_debounced = functools.debounce( oninput , DELAY_DEBOUNCE_SEARCH );
+
+  document.getElementById( 'search' )
+    .addEventListener('input' , oninput_debounced) ;
+
+  document.getElementById( 'search' )
+    .addEventListener('keydown', e => { e.stopPropagation(); }) ;
+
 }
 
 window.onload = main;

@@ -52,6 +52,8 @@ body {
   }
 }
 
+header { grid-area: header; }
+
 main { grid-area: main; }
 
 nav,
@@ -59,7 +61,23 @@ nav,
   background-color: #eee;
 }
 
-#legend > .curve {
+#legend {
+  grid-area: legend;
+  width: 200px;
+}
+
+#legend > .choices {
+  box-sizing: border-box;
+  grid-area: choices;
+  padding-top: 5px;
+  width: 200px;
+  height: calc(100vh - 60px);
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+
+#legend > .choices > .curve {
   height: 40px;
   line-height: 40px;
   padding: 5px;
@@ -69,21 +87,22 @@ nav,
   text-overflow: ellipsis;
 }
 
-#legend > .curve:not(.selected):hover {
+#legend > .choices > .curve:not(.selected):hover {
   background-color: white;
 }
 
-#legend > .curve > span.avatar {
+#legend > .choices > .curve > span.avatar {
   background-color: white;
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: bold;
   display: block;
   float: left;
-  font-size: large;
   border-radius: 20px;
   width: 40px;
   height: 40px;
   text-align: center;
   line-height: 40px;
-  font-family: "Arial", sans-serif;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
@@ -91,16 +110,40 @@ nav,
   margin-right: 15px;
 }
 
-#legend > .curve.selected:hover > span.avatar {
+#legend > .choices > .curve.selected > span.avatar {
+  color: white;
+}
+
+#legend > .choices > .curve.selected:hover > span.avatar {
   opacity: 0.5;
 }
 
-#legend > .curve:not(.selected):hover > span.avatar {
+#legend > .choices > .curve:not(.selected):hover > span.avatar {
   background-color: #eee;
 }
 
-#legend > .curve > span.label {
+#legend > .choices > .curve > span.label {
+  font-family: sans-serif;
   color: black;
+}
+
+#legend > .choices > .curve.selected > span.label {
+  /*font-weight: bold;*/
+}
+
+#legend > .search {
+  grid-area: search;
+  padding: 10px;
+}
+
+#search {
+  display: block;
+  width: 180px; /* 200 - 2 * 10 */
+  box-sizing: border-box;
+  padding: 0 10px;
+  border: none;
+  height: 40px;
+  line-height: 40px;
 }
 
 
@@ -121,7 +164,7 @@ nav {
   grid-gap: 0;
   grid-template-rows: 1;
   grid-template-columns: repeat(auto-fit, max-content);
-  grid-template-areas: "help log normalize";
+  grid-template-areas: "help log normalize datasets";
 }
 
 @media only screen and (min-width: 700px) {
@@ -190,32 +233,6 @@ nav > div:hover > div {
     background-color: inherit;
     visibility: hidden;
   }
-}
-
-#legend {
-  grid-area: legend;
-  margin: 0;
-  border: 0;
-  padding-top: 1rem;
-  padding-bottom: 1rem;
-  padding-left: 0;
-  padding-right: 0;
-  display: grid;
-  width: 200px;
-  grid-template-columns: repeat(1, 1fr);
-  grid-template-rows: repeat(auto-fit, 50px);
-  overflow-x: hidden;
-  overflow-y: scroll;
-}
-
-#legend svg {
-  box-sizing: border-box;
-  overflow: hidden;
-  height: 50px;
-  width: 200px;
-  border: 0;
-  margin: 0;
-  padding: 0;
 }
 
 .center-screen {
