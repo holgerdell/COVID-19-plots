@@ -3,7 +3,7 @@
 import * as string from "./lib/string.js";
 import * as itertools from "./lib/itertools.js";
 import * as functools from "./lib/functools.js";
-import * as csse from "./csse.js";
+import * as jh from "./jh.js";
 import * as countries from "./countries.js";
 import * as owid from "./owid.js";
 
@@ -39,7 +39,7 @@ const PLOT_LINE_STROKE_WIDTH = 3;
   */
 function getDatasets() {
   /* This is a hack - should inspect data dictionary instead */
-  return csse.types.map((x) => `jh_${x}`)
+  return jh.types.map((x) => `jh_${x}`)
     .concat(owid.types.map((x) => `owid_${x}`));
 }
 
@@ -443,21 +443,21 @@ async function getData() {
   const byDate = {};
   const allCountries = new Set();
 
-  for ( const type of csse.types ) {
-    const rows = await csse.load(type);
+  for ( const type of jh.types ) {
+    const rows = await jh.load(type);
     for ( const row of rows ) {
-      const datestring = row[csse.KEY_DATE];
+      const datestring = row[jh.KEY_DATE];
       if (byDate[datestring] === undefined) {
         byDate[datestring] = {};
         byDate[datestring]["Date"] =
           d3.timeParse("%Y-%m-%d")(datestring);
       }
       byDate[datestring]["jh_"+type] = Object.fromEntries(itertools.filter(
-        ([key, value]) => key !== csse.KEY_DATE,
+        ([key, value]) => key !== jh.KEY_DATE,
         Object.entries(row),
       ));
       for (const country of
-        itertools.filter((x) => x !== csse.KEY_DATE, Object.keys(row))) {
+        itertools.filter((x) => x !== jh.KEY_DATE, Object.keys(row))) {
         allCountries.add(country);
       }
     }
