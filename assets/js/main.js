@@ -30,7 +30,7 @@ const defaultState = {
 let data = {};
 
 /* Style configuration */
-const PLOT_CIRCLE_RADIUS = 4;
+const PLOT_CIRCLE_RADIUS = 3;
 const PLOT_LINE_STROKE_WIDTH = 3;
 
 
@@ -61,7 +61,7 @@ function color(obj, numObjects) {
   return d3.interpolateCool(fraction);
   */
 
-  fraction = 1.75 * (1-fraction);
+  fraction = 1.5 * (1-fraction);
   if (fraction <= 1) return d3.color(d3.interpolateWarm(fraction)).darker(0.2);
   else return d3.color(d3.interpolateCool(2-fraction)).darker(0.2);
 }
@@ -286,7 +286,7 @@ function onStateChange() {
   }
   else {
     x = d3.scaleUtc()
-      .domain([xmin, xmax]).nice()
+      .domain([xmin, xmax])
       .range([margin.left, width - margin.right]);
   }
 
