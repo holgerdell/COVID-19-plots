@@ -1,6 +1,7 @@
 /* COVID-19-plots.js | MIT License | github.com/holgerdell/COVID-19-plots */
 
 const DELAY_DEBOUNCE_SEARCH = 200;
+const MILLISECONDS_IN_A_DAY = 1000 * 60 * 60 * 24;
 
 /* We insist that the entire program's model state is stored in this dict. */
 let state = {};
@@ -8,6 +9,7 @@ let state = {};
 /* This dictionary holds the default values for the state
  * new toggles and options can simply be added here */
 const defaultState = {
+  "align": false,
   "normalize": true,
   "logplot": true,
   "legend": true,
@@ -194,7 +196,7 @@ function getValue(
     }
     if (normalize) {
       value = value * 100000.0
-        / parseInt(data["Country information"][country]["Population"]);
+        / parseInt(data["Country information"][country]["Population"], 10);
     }
     return value;
   }
@@ -215,6 +217,7 @@ function onStateChange() {
   const width = document.getElementById("main").offsetWidth;
   const height = document.getElementById("main").offsetHeight;
   const margin = ({top: 20, right: 20, bottom: 60, left: 50});
+
   const svg = d3.select("main > svg");
   svg.html(null); // delete all children
 
@@ -237,10 +240,48 @@ function onStateChange() {
     }
   });
 
+  const massaged = [];
+  let span = 1;
+
+  state.countries.forEach((c, i) => {
+
+    let first_event;
+    /* Massage the data for this country */
+    const countryData = [];
+    for (const d of data["Time series"]) {
+      const value = getValue(d, c, state.dataset, state.normalize);
+      if (!isNaN(value) && value !== undefined && value > 0) {
+        if (first_event === undefined) first_event = d["Date"];
+        const ellapsed = (d["Date"] - first_event) /  MILLISECONDS_IN_A_DAY;
+        span = Math.max(span, ellapsed);
+        countryData.push({
+          date: d["Date"],
+          value: value,
+          country: c,
+          countryIndex: i,
+          x: state.align ? ellapsed : d["Date"],
+          y: value,
+        });
+      }
+    }
+
+    massaged.push(countryData);
+
+  });
+
+
   /* x is a function that maps Date objects to x-coordinates on-screen */
-  const x = d3.scaleUtc()
-    .domain([xmin, xmax]).nice()
-    .range([margin.left, width - margin.right]);
+  let x = null
+  if (state.align) {
+    x = d3.scaleLinear()
+      .domain([0, span]).nice()
+      .range([margin.left, width - margin.right]);
+  }
+  else {
+    x = d3.scaleUtc()
+      .domain([xmin, xmax]).nice()
+      .range([margin.left, width - margin.right]);
+  }
 
   /* draw the x-axis */
   svg.append("g")
@@ -279,28 +320,12 @@ function onStateChange() {
       .attr("font-weight", "bold")
       .text(ylabel(state)));
 
-  /* draw the plot for each country */
-  for (let i=0; i < state.countries.length; i++) {
-    const c = state.countries[i];
-
-    /* Massage the data for this country */
-    const countryData = [];
-    for (let j=0; j < data["Time series"].length; j++) {
-      const d = data["Time series"][j];
-      const value = getValue(d, c, state.dataset, state.normalize);
-      if (value !== NaN && value !== undefined && value > 0) {
-        countryData.push({
-          date: d["Date"],
-          value: value,
-          country: c,
-          countryIndex: i,
-        });
-      }
-    }
+  massaged.forEach((countryData, i) => {
+    /* draw the plot for each country */
 
     const line = d3.line()
-      .x((d) => x(d.date))
-      .y((d) => y(d.value));
+      .x((d) => x(d.x))
+      .y((d) => y(d.y));
 
     svg.append("path")
       .datum(countryData)
@@ -314,8 +339,8 @@ function onStateChange() {
       .append("circle")
       .style("fill", color(i, state.countries.length))
       .attr("r", PLOT_CIRCLE_RADIUS)
-      .attr("cx", (d) => x(d.date))
-      .attr("cy", (d) => y(d.value))
+      .attr("cx", (d) => x(d.x))
+      .attr("cy", (d) => y(d.y))
       .on("mouseover", function(d, i) {
         d3.select(this).attr("r", 2*PLOT_LINE_STROKE_WIDTH);
         tooltip.html(d.country
@@ -330,7 +355,7 @@ function onStateChange() {
         d3.select(this).transition().attr("r", PLOT_CIRCLE_RADIUS);
         return tooltip.style("visibility", "hidden");
       });
-  }
+  } ) ;
 
   const legend = d3.select("#legend > .choices");
   legend.html(null); // delete all children
@@ -500,6 +525,11 @@ async function main() {
     onStateChange();
   };
   d3.select("#datasets").on("click", switchdatasets);
+  const toggleAlign = () => {
+    state.align = ! state.align;
+    onStateChange();
+  };
+  d3.select("#align").on("click", toggleAlign);
 
   document.addEventListener("keydown", (event) => {
     switch (event.key) {
@@ -507,6 +537,7 @@ async function main() {
     case "n": switchnormalize(); break;
     case "d": switchdatasets(); break;
     case "D": switchdatasets(-1); break;
+    case "a": toggleAlign(); break;
     }
   });
 
