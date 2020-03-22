@@ -1,4 +1,3 @@
-import * as github from "./lib/github.js";
 import * as itertools from "./lib/itertools.js";
 
 // Map country names from different sources to the display names on the right
@@ -28,30 +27,18 @@ export const KEY_VALUE = "Value";
 export const KEY_NAME = "Country Name";
 export const KEY_CODE = "Country Code";
 
-export const load = (year, names) => {
-  const url = get_data_set_url();
-  return new Promise(function(resolve, reject) {
-    // Download and massage population data
-    const onreadystatechange = (event) => {
-      if (event.target.readyState === XMLHttpRequest.DONE) {
-        github.logRAWRequest(event);
-        if (event.target.status === 200) {
-          const raw = event.target.responseText;
-          let rows = d3.csvParse(raw);
-          rows = sanitize(rows);
-          if (year !== undefined) rows = select_year(year, rows);
-          if (names !== undefined) rows = select_names(names, rows);
-          rows = Array.from(rows);
-          validate(names, rows);
-          resolve(rows);
-        }
-      }
-    };
 
-    const request = new XMLHttpRequest();
-    request.onreadystatechange = onreadystatechange;
-    request.open("GET", url);
-    request.send();
+export const load = (year, names) => {
+  const URL = "https://raw.githubusercontent.com/datasets/population/master/data/population.csv";
+  return new Promise(function(resolve, reject) {
+    d3.csv(URL).then(function(rows) {
+      rows = sanitize(rows);
+      if (year !== undefined) rows = selectYear(year, rows);
+      if (names !== undefined) rows = selectNames(names, rows);
+      rows = Array.from(rows);
+      validate(names, rows);
+      resolve(rows);
+    });
   });
 };
 
@@ -73,42 +60,36 @@ function validate(names, rows) {
   return status;
 }
 
-
+/**
+ * @param {List} rows
+ */
 function* sanitize(rows) {
-  for ( const old_row of rows ) {
-    const new_row = {};
-    for ( const column in old_row ) {
-      if (column === KEY_YEAR) new_row[column] = parseInt(old_row[column], 10) ;
-      else if (column === KEY_VALUE) new_row[column] = parseInt(old_row[column], 10) ;
+  for ( const row of rows ) {
+    const newrow = {};
+    for ( const column in row ) {
+      if (column === KEY_YEAR) newrow[column] = parseInt(row[column], 10);
+      else if (column === KEY_VALUE) newrow[column] = parseInt(row[column], 10);
       else if (column === KEY_NAME) {
-        const name = old_row[column];
-        new_row[column] = canonicalCountryName(name);
-      }
-      else {
-        new_row[column] = old_row[column];
+        const name = row[column];
+        newrow[column] = canonicalCountryName(name);
+      } else {
+        newrow[column] = row[column];
       }
     }
-    yield new_row;
+    yield newrow;
   }
 }
 
-function select_year(year, rows) {
+
+const selectYear = function(year, rows) {
   return itertools.filter((row) => row[KEY_YEAR] === year, rows);
-}
-
-function select_names(names, rows) {
-  const name_set = new Set(names);
-  return itertools.filter((row) => name_set.has(row[KEY_NAME]), rows);
-}
-
-
-const get_data_set_url = () => {
-  const owner = "datasets";
-  const repo = "population";
-  const path = "data/population.csv";
-  const url = github.raw_url(owner, repo, path);
-  return url;
 };
+
+const selectNames = function(names, rows) {
+  const set = new Set(names);
+  return itertools.filter((row) => set.has(row[KEY_NAME]), rows);
+};
+
 
 /** Given the name of a country, returns its canonical name
  * (that is, the one we are going to display)

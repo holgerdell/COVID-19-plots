@@ -39,12 +39,11 @@ function groupByDate(rows, type) {
     byDate[datestring][country] = value;
   }
 
-  const timeseries = [];
-  Object.keys(byDate).forEach(function(datestring) {
-    timeseries.push(byDate[datestring]);
-  });
-  timeseries.sort(function(a, b) {
+
+  const SORT_BY_DATE = function(a, b) {
     a[KEY_DATE] < b[KEY_DATE] ? -1 : a[KEY_DATE] > b[KEY_DATE] ? 1 : 0;
-  });
+  };
+  const timeseries = Object.values(byDate);
+  timeseries.sort(SORT_BY_DATE);
   return timeseries;
 }
