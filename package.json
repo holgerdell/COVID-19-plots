@@ -14,5 +14,45 @@
     "stylelint": "^13.2.1",
     "stylelint-config-standard": "^20.0.0",
     "stylelint-order": "^4.0.0"
+  },
+  "eslintConfig": {
+    "env": {
+      "browser": true,
+      "es6": true
+    },
+    "parserOptions": {
+      "ecmaVersion": 2017
+    },
+    "extends": "google",
+    "rules": {
+      "no-undef": "error",
+      "indent": ["error", 2],
+      "linebreak-style": ["error", "unix"],
+      "quotes": ["error", "double"],
+      "semi": ["error", "always"]
+    },
+    "globals": {
+      "countries": true,
+      "csse": true,
+      "d3": true,
+      "github": true,
+      "functools": true,
+      "itertools": true,
+      "owid": true,
+      "string": true
+    }
+  },
+  "stylelint": {
+    "extends": "stylelint-config-standard",
+    "plugins": [
+      "stylelint-order"
+      ],
+      "rules": {
+        "order/order": [
+          "custom-properties",
+          "declarations"
+        ],
+        "order/properties-alphabetical-order": true
+      }
   }
 }
