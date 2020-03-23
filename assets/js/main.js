@@ -213,6 +213,13 @@ function onStateChange () {
   tooltip.style('visibility', 'hidden')
 
   d3.select('body').classed('loading', false)
+  d3.select('#log').classed('toggled', state.logplot)
+  d3.select('#normalize').classed('toggled', state.normalize)
+  d3.select('#align').classed('toggled', state.align)
+
+  const datasets = getDatasets()
+  const datasetButtonColor = color(datasets.indexOf(state.dataset), datasets.length)
+  d3.select('#datasets').style('background-color', datasetButtonColor)
 
   const width = document.getElementById('main').offsetWidth
   const height = document.getElementById('main').offsetHeight
