@@ -531,12 +531,14 @@ async function main() {
   d3.select("#align").on("click", toggleAlign);
 
   document.addEventListener("keydown", (event) => {
-    switch (event.key) {
-    case "l": switchlog(); break;
-    case "n": switchnormalize(); break;
-    case "d": switchdatasets(); break;
-    case "D": switchdatasets(-1); break;
-    case "a": toggleAlign(); break;
+    if (!event.ctrlKey && !event.altKey) {
+      switch (event.key) {
+      case "l": switchlog(); break;
+      case "n": switchnormalize(); break;
+      case "d": switchdatasets(); break;
+      case "D": switchdatasets(-1); break;
+      case "a": toggleAlign(); break;
+      }
     }
   });
 
