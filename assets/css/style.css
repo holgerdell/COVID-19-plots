@@ -184,7 +184,7 @@ nav {
 nav > div {
   border-radius: 20px;
   cursor: pointer;
-  font-family: "Arial", sans-serif;
+  font-family: monospace;
   font-size: large;
   height: 40px;
   line-height: 40px;
@@ -200,7 +200,11 @@ nav > div {
 #help { grid-area: help; }
 #log { grid-area: log; }
 #normalize { grid-area: normalize; }
-#datasets { grid-area: datasets; }
+#datasets {
+  grid-area: datasets;
+  color: white;
+  background-color: #777;
+}
 #align { grid-area: align; }
 
 nav > div > div {
@@ -209,12 +213,17 @@ nav > div > div {
   font-family: "Times", "Georgia", serif;
   font-size: large;
   font-weight: normal;
+  color: black;
   left: 7rem;
   padding: 0.5em 1em 0.5em 1em;
   position: absolute;
   text-align: left;
   top: 6rem;
   visibility: hidden;
+}
+
+nav > div.toggled {
+  background-color: #ddd;
 }
 
 nav > div:hover {
