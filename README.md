@@ -19,15 +19,17 @@ Start a http server for local development:
 yarn run http-server
 ```
 
-Manually run the CSS linter:
+Manually run the JavaScript linter [standard](https://standardjs.com/):
+```bash
+yarn run standard
+```
+
+Manually run the CSS linter [stylelint](https://stylelint.io/):
 ```bash
 yarn run stylelint "**/*.css"
 ```
 
-Manually run the JavaScript linter:
-```bash
-yarn run eslint "**/*.js"
-```
+Both linters support `--fix` for automatic fixing.
 
 Visual Studio Code provides the extensions [dbaeumer.vscode-eslint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) and [stylelint.vscode-stylelint](https://marketplace.visualstudio.com/items?itemName=stylelint.vscode-stylelint) for automatic linting.
 
