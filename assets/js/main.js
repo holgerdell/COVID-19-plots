@@ -193,7 +193,7 @@ function getValue (
   } else {
     let value = row[dataset][country]
     if (!(typeof value === 'number')) {
-      console.log('Error:', dataset, country, value, 'is not a number')
+      console.error('Error:', dataset, country, value, 'is not a number')
     }
     if (normalize) {
       value = value * 100000.0 /
@@ -290,7 +290,7 @@ function onStateChange () {
     .call(d3.axisBottom(x))
     .attr('transform', `translate(0,${height - margin.bottom})`)
 
-  console.log('Using dataset', state.dataset)
+  console.debug('Using dataset', state.dataset)
 
   let ymax = -Infinity
   let ymin = Infinity
@@ -304,7 +304,7 @@ function onStateChange () {
       if (value !== undefined && value < ymin && value > 0) ymin = value
     }
   }
-  console.log('Domain from', ymin, 'to', ymax)
+  console.debug('Domain from', ymin, 'to', ymax)
 
   /* y is a function that maps values to y-coordinates on-screen */
   const y = ((state.logplot) ? d3.scaleLog() : d3.scaleLinear())

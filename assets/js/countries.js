@@ -64,7 +64,7 @@ function validate (names, rows) {
       notFound.add(name)
     }
   }
-  console.log('Info: These country names were not found in population data:',
+  console.debug('Info: These country names were not found in population data:',
     Array.from(notFound))
   return status
 }
