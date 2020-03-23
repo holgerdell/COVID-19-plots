@@ -2,7 +2,7 @@
   "name": "covid-19-plots",
   "version": "0.0.1",
   "description": "some plot",
-  "main": "COVID-19-plots.js",
+  "main": "assets/js/main.js",
   "repository": "git@github.com:holgerdell/COVID-19-plots.git",
   "author": "Holger Dell <holgerdell@users.noreply.github.com>",
   "license": "MIT",
