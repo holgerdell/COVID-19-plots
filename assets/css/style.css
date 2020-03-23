@@ -200,6 +200,7 @@ nav > div {
 #help { grid-area: help; }
 #log { grid-area: log; }
 #normalize { grid-area: normalize; }
+
 #datasets {
   grid-area: datasets;
   color: white;
