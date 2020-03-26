@@ -33,11 +33,14 @@ let data = {}
 const PLOT_CIRCLE_RADIUS = 3
 const PLOT_LINE_STROKE_WIDTH = 3
 
+/* Align curve threshold */
+const ALIGN_THRESHOLD_NORMALIZED = 0.1 // align to first day >= 0.1 cases per 100,000
+const ALIGN_THRESHOLD = 100 // align to first day with >= 100 cases
+
 /** Return all available datasets
   * @return {List} of Strings
   */
 function getDatasets () {
-  /* This is a hack - should inspect data dictionary instead */
   return jh.types.map((x) => `jh_${x}`)
     .concat(owid.types.map((x) => `owid_${x}`))
 }
@@ -217,6 +220,12 @@ function onStateChange () {
   d3.select('#normalize').classed('toggled', state.normalize)
   d3.select('#align').classed('toggled', state.align)
 
+  if (state.normalize) {
+    d3.select('#align > div').text(`Align by first day with ${ALIGN_THRESHOLD_NORMALIZED} cases per 100,000`)
+  } else {
+    d3.select('#align > div').text(`Align by first day with ${ALIGN_THRESHOLD} cases`)
+  }
+
   const datasets = getDatasets()
   const datasetButtonColor = color(datasets.indexOf(state.dataset), datasets.length)
   d3.select('#datasets').style('background-color', datasetButtonColor)
@@ -251,23 +260,33 @@ function onStateChange () {
   let span = 1
 
   state.countries.forEach((c, i) => {
-    let firstEvent
+    let firstDateAboveThreshold
     /* Massage the data for this country */
     const countryData = []
     for (const d of data['Time series']) {
-      const value = getValue(d, c, state.dataset, state.normalize)
-      if (!isNaN(value) && value !== undefined && value > 0) {
-        if (firstEvent === undefined) firstEvent = d.Date
-        const ellapsed = (d.Date - firstEvent) / MILLISECONDS_IN_A_DAY
-        span = Math.max(span, ellapsed)
-        countryData.push({
-          date: d.Date,
-          value: value,
-          country: c,
-          countryIndex: i,
-          x: state.align ? ellapsed : d.Date,
-          y: value
-        })
+      const yvalue = getValue(d, c, state.dataset, state.normalize)
+      if (!isNaN(yvalue) && yvalue !== undefined && yvalue > 0) {
+        let xvalue
+        if (!state.align) {
+          xvalue = d.Date
+        } else {
+          const threshold = (state.normalize) ? ALIGN_THRESHOLD_NORMALIZED : ALIGN_THRESHOLD
+          if (firstDateAboveThreshold === undefined && yvalue >= threshold) firstDateAboveThreshold = d.Date
+          if (firstDateAboveThreshold !== undefined) {
+            xvalue = (d.Date - firstDateAboveThreshold) / MILLISECONDS_IN_A_DAY
+            span = Math.max(span, xvalue)
+          }
+        }
+        if (xvalue !== undefined) {
+          countryData.push({
+            date: d.Date,
+            value: yvalue,
+            country: c,
+            countryIndex: i,
+            x: xvalue,
+            y: yvalue
+          })
+        }
       }
     }
     massaged.push(countryData)
