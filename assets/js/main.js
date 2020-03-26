@@ -20,7 +20,7 @@ const defaultState = {
   normalize: true,
   logplot: true,
   legend: true,
-  dataset: 'owid_total_cases',
+  dataset: 'owid_' + owid.TYPE_CASES,
   countries: [
     'China', 'Italy', 'Denmark', 'Germany', 'Sweden', 'Greece', 'France'
   ]
