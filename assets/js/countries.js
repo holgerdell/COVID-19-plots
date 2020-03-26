@@ -26,72 +26,6 @@ const NAME_MAPPING = {
   'Venezuela, RB': 'Venezuela'
 }
 
-export const KEY_YEAR = 'Year'
-export const KEY_VALUE = 'Value'
-export const KEY_NAME = 'Country Name'
-export const KEY_CODE = 'Country Code'
-
-export const load = (year, names) => {
-  const URL = 'https://raw.githubusercontent.com/datasets/population/master/data/population.csv'
-  return new Promise(function (resolve, reject) {
-    d3.csv(URL).then(function (rows) {
-      rows = sanitize(rows)
-      if (year !== undefined) rows = selectYear(year, rows)
-      if (names !== undefined) rows = selectNames(names, rows)
-      rows = Array.from(rows)
-      validate(names, rows)
-      resolve(rows)
-    })
-  })
-}
-
-/** validates that all countries in names have been found
-  * @param {List} names
-  * @param {List} rows
-  *
-  * @return {Boolean}
-  */
-function validate (names, rows) {
-  const foundNames = new Set()
-  for (const row of rows) {
-    foundNames.add(row.country)
-  }
-  let status = true
-  const notFound = new Set()
-  for (const name of names) {
-    if (!foundNames.has(name)) {
-      status = false
-      notFound.add(name)
-    }
-  }
-  console.debug('Info: These country names were not found in population data:',
-    Array.from(notFound))
-  return status
-}
-
-/**
- * @param {List} rows
- */
-function * sanitize (rows) {
-  for (const row of rows) {
-    yield {
-      country: canonicalCountryName(row[KEY_NAME]),
-      code: row[KEY_CODE],
-      population: parseInt(row[KEY_VALUE], 10),
-      year: parseInt(row[KEY_YEAR], 10)
-    }
-  }
-}
-
-const selectYear = function (year, rows) {
-  return itertools.filter((row) => row.year === year, rows)
-}
-
-const selectNames = function (names, rows) {
-  const set = new Set(names)
-  return itertools.filter((row) => set.has(row.country), rows)
-}
-
 /** Given the name of a country, returns its canonical name
  * (that is, the one we are going to display)
  * @param {String} country
@@ -99,4 +33,63 @@ const selectNames = function (names, rows) {
  */
 export function canonicalCountryName (country) {
   return NAME_MAPPING[country] || country
+}
+
+/* Variable (local to this module) that holds the population data */
+let countries
+
+export async function load (nameSet = Set()) {
+  const URL = 'https://raw.githubusercontent.com/datasets/population/master/data/population.csv'
+  let rows = await d3.csv(URL, sanitize)
+  rows = selectNames(nameSet, rows)
+  countries = itertools.group(rows, 'country')
+  countries = selectLatestYear(countries)
+}
+
+export function forEach (f) {
+  if (countries === undefined) {
+    console.error('Must load data first')
+    return
+  }
+  for (const e of Object.values(countries)) f(e)
+}
+
+export function getInfo (country) {
+  if (countries === undefined) {
+    console.error('Must load data first')
+  } else {
+    return countries[country]
+  }
+}
+
+const KEY_YEAR = 'Year'
+const KEY_VALUE = 'Value'
+const KEY_NAME = 'Country Name'
+const KEY_CODE = 'Country Code'
+
+/** Sanitize a row of the population csv file
+ * @param {Dictionary} row
+ */
+function sanitize (row) {
+  return {
+    country: canonicalCountryName(row[KEY_NAME]),
+    code: row[KEY_CODE],
+    population: parseInt(row[KEY_VALUE], 10),
+    year: parseInt(row[KEY_YEAR], 10)
+  }
+}
+
+function selectNames (nameSet, rows) {
+  return itertools.filter((row) => nameSet.has(row.country), rows)
+}
+
+function selectLatestYear (countries) {
+  for (const c of Object.keys(countries)) {
+    let maxe = countries[c][0]
+    for (const e of countries[c]) {
+      maxe = (maxe.year > e.year) ? maxe : e
+    }
+    countries[c] = maxe
+  }
+  return countries
 }

@@ -200,7 +200,7 @@ function getValue (
     }
     if (normalize) {
       value = value * 100000.0 /
-        parseInt(data['Country information'][country].Population, 10)
+        parseInt(countries.getInfo(country).population, 10)
     }
     return value
   }
@@ -221,9 +221,9 @@ function onStateChange () {
   d3.select('#align').classed('toggled', state.align)
 
   if (state.normalize) {
-    d3.select('#align > div').text(`Align by first day with ${ALIGN_THRESHOLD_NORMALIZED} cases per 100,000`)
+    d3.select('#align > div').text(`Align by first day with ${ALIGN_THRESHOLD_NORMALIZED} cases per 100,000 [a]`)
   } else {
-    d3.select('#align > div').text(`Align by first day with ${ALIGN_THRESHOLD} cases`)
+    d3.select('#align > div').text(`Align by first day with ${ALIGN_THRESHOLD} cases [a]`)
   }
 
   const datasets = getDatasets()
@@ -239,7 +239,7 @@ function onStateChange () {
 
   /* Check if all countries in the state are present in the data */
   for (const c of state.countries) {
-    if (!(c in data['Country information'])) {
+    if (countries.getInfo(c) === undefined) {
       svg.append('text').attr('x', 100).attr('y', 200)
         .text("ERROR: Did not find country '" + c + "' in data.")
       return
@@ -385,9 +385,7 @@ function onStateChange () {
     item.append('span')
       .classed('avatar', true)
       .style('background-color', color(i, state.countries.length))
-      .text(
-        data['Country information'][state.countries[i]][countries.KEY_CODE]
-      )
+      .text(countries.getInfo(state.countries[i]).code)
     item.append('span')
       .classed('label', true)
       .text(state.countries[i])
@@ -405,9 +403,7 @@ function onStateChange () {
         svg.selectAll('circle')
           .filter((d) => d.countryIndex === i)
           .transition().attr('r', 2 * PLOT_CIRCLE_RADIUS)
-        tooltip.html('Population: ' +
-          data['Country information'][state.countries[i]].Population
-            .toLocaleString())
+        tooltip.html('Population: ' + countries.getInfo(state.countries[i]).population.toLocaleString())
         return tooltip.style('visibility', 'visible')
       })
       .on('mousemove', () => tooltip
@@ -425,17 +421,17 @@ function onStateChange () {
   }
 
   /* Draw currently inactive countries */
-  Object.keys(data['Country information']).forEach(function (key) {
-    if (!(state.countries.includes(key))) {
+  countries.forEach(function (c) {
+    if (!(state.countries.includes(c.country))) {
       const item = legend.append('div').classed('curve', true)
       item.append('span')
         .classed('avatar', true)
-        .text(data['Country information'][key][countries.KEY_CODE])
+        .text(c.code)
       item.append('span')
         .classed('label', true)
-        .text(key)
+        .text(c.country)
       item.on('click', function (_) {
-        state.countries.push(key)
+        state.countries.push(c.country)
         onStateChange()
       })
     }
@@ -444,8 +440,8 @@ function onStateChange () {
   // Populate datalist for search feature
   const datalist = d3.select('#datalist-countries')
   datalist.html(null) // delete all children
-  Object.keys(data['Country information']).forEach(function (key) {
-    datalist.append('option').attr('value', key)
+  countries.forEach(function (c) {
+    datalist.append('option').attr('value', c.country)
   })
 }
 
@@ -466,8 +462,7 @@ async function getData () {
   for (const row of rows) {
     allCountries.add(row.country)
   }
-
-  const countryData = await countries.load(2016, allCountries)
+  await countries.load(allCountries)
 
   /* now convert data to old data model (TODO: update consumers of getData()) */
 
@@ -504,12 +499,7 @@ async function getData () {
   })
 
   return {
-    'Time series': timeseries,
-    'Country information': Object.fromEntries(itertools.map(
-      (item) => [item.country, {
-        Population: item.population,
-        'Country Code': item.code
-      }], countryData))
+    'Time series': timeseries
   }
 }
 
@@ -565,10 +555,9 @@ async function main () {
 
   const countriesCodeMap = new Map()
 
-  Object.keys(data['Country information']).forEach(function (key) {
-    const code = data['Country information'][key]['Country Code']
-    countriesCodeMap.set(code, key)
-    countriesCodeMap.set(code.toLowerCase(), key)
+  countries.forEach(function (c) {
+    countriesCodeMap.set(c.code, c.country)
+    countriesCodeMap.set(c.code.toLowerCase(), c.country)
   })
 
   const oninput = (e) => {
@@ -582,7 +571,7 @@ async function main () {
     ]
 
     for (const key of keys) {
-      if (key in data['Country information']) {
+      if (countries.getInfo(key) !== undefined) {
         if (state.countries.includes(key)) {
           state.countries = state.countries.filter(
             (item) => item !== key
