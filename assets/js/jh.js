@@ -6,14 +6,14 @@ const KEY_STATE = 'Province/State'
 const KEY_LATITUDE = 'Lat'
 const KEY_LONGITUDE = 'Long'
 
-const TYPE_DEATHS = 'Deaths'
-const TYPE_CONFIRMED = 'Confirmed'
-const TYPE_RECOVERED = 'Recovered'
+export const TYPE_CONFIRMED = 'confirmed'
+export const TYPE_DEATHS = 'deaths'
+export const TYPE_RECOVERED = 'recovered'
 
-export const types = [TYPE_DEATHS, TYPE_CONFIRMED, TYPE_RECOVERED]
+export const types = [TYPE_CONFIRMED, TYPE_DEATHS, TYPE_RECOVERED]
 
 export const load = (type) => {
-  const URL = `https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-${type}.csv`
+  const URL = `https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_${type}_global.csv`
   return new Promise(function (resolve, reject) {
     d3.csv(URL).then(function (rows) {
       rows = sanitize(rows)
@@ -36,7 +36,10 @@ function * sanitize (rows) {
         const [M, d, yy] = column.split('/')
         const dd = d.length === 1 ? '0' + d : d
         const MM = M.length === 1 ? '0' + M : M
-        const yyyy = '20' + yy
+        let yyyy = yy
+        if (yyyy.length === 2) {
+          yyyy = '20' + yyyy
+        }
         const datestring = `${yyyy}-${MM}-${dd}`
         yield {
           datestring: datestring,

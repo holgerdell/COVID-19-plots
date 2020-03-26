@@ -158,11 +158,11 @@ function setDisplayedUrlQuerystring (querystring) {
   */
 function ylabel (state) {
   let ylabel = ''
-  if (state.dataset === 'jh_Confirmed') {
+  if (state.dataset === 'jh_' + jh.TYPE_CONFIRMED || state.dataset === 'owid_' + owid.TYPE_CASES) {
     ylabel = 'Confirmed Infections'
-  } else if (state.dataset === 'jh_Deaths') {
+  } else if (state.dataset === 'jh_' + jh.TYPE_DEATHS || state.dataset === 'owid_' + owid.TYPE_DEATHS) {
     ylabel = 'Confirmed Deaths'
-  } else if (state.dataset === 'jh_Recovered') {
+  } else if (state.dataset === 'jh_' + jh.TYPE_RECOVERED) {
     ylabel = 'Confirmed Recovered'
   }
   if (state.normalize) {
