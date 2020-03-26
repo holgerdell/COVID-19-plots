@@ -27,7 +27,7 @@ const defaultState = {
 }
 
 /* The data never changes after it is put in this dict by the main function. */
-let data = {}
+let timeseriesData = {}
 
 /* Style configuration */
 const PLOT_CIRCLE_RADIUS = 3
@@ -178,7 +178,7 @@ function ylabel (state) {
   return ylabel
 }
 
-/** This function returns a value of a given row of data["Time series"].
+/** This function returns a value of a given row of timeseriesData.
   * @param {Dictionary} row
   * @param {String} country
   * @param {String} dataset
@@ -248,9 +248,9 @@ function onStateChange () {
 
   let xmax = -Infinity
   let xmin = Infinity
-  Object.keys(data['Time series']).forEach(function (datestring) {
-    if (data['Time series'][datestring][state.dataset]) {
-      const date = data['Time series'][datestring].Date
+  Object.keys(timeseriesData).forEach(function (datestring) {
+    if (timeseriesData[datestring][state.dataset]) {
+      const date = timeseriesData[datestring].Date
       if (date < xmin) xmin = date
       if (date > xmax) xmax = date
     }
@@ -263,7 +263,7 @@ function onStateChange () {
     let firstDateAboveThreshold
     /* Massage the data for this country */
     const countryData = []
-    for (const d of data['Time series']) {
+    for (const d of timeseriesData) {
       const yvalue = getValue(d, c, state.dataset, state.normalize)
       if (!isNaN(yvalue) && yvalue !== undefined && yvalue > 0) {
         let xvalue
@@ -315,7 +315,7 @@ function onStateChange () {
   let ymin = Infinity
   for (let i = 0; i < state.countries.length; i++) {
     const c = state.countries[i]
-    for (const row of data['Time series']) {
+    for (const row of timeseriesData) {
       const value = getValue(
         row, c, state.dataset, state.normalize
       )
@@ -493,21 +493,17 @@ async function getData () {
   }
 
   /* now forget the top-level grouping by date, but sort by date */
-  const timeseries = Object.values(byDateSourceCountry)
-  timeseries.sort(function (a, b) {
+  timeseriesData = Object.values(byDateSourceCountry)
+  timeseriesData.sort(function (a, b) {
     return a.Date < b.Date ? -1 : a.Date > b.Date ? 1 : 0
   })
-
-  return {
-    'Time series': timeseries
-  }
 }
 
 /** The main function is called when the page has loaded */
 async function main () {
   state = parseUrlArgs()
 
-  data = await getData()
+  await getData()
 
   onStateChange()
 
