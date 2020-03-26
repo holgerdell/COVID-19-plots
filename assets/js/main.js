@@ -370,8 +370,8 @@ function onStateChange () {
         return tooltip.style('visibility', 'visible')
       })
       .on('mousemove', () => tooltip
-        .style('top', (d3.event.pageY - 10) + 'px')
-        .style('left', (d3.event.pageX + 10) + 'px'))
+        .style('top', (d3.event.pageY - 15) + 'px')
+        .style('right', (document.body.offsetWidth - d3.event.pageX + 20) + 'px'))
       .on('mouseout', function (d, i) {
         d3.select(this).transition().attr('r', PLOT_CIRCLE_RADIUS)
         return tooltip.style('visibility', 'hidden')
@@ -407,8 +407,8 @@ function onStateChange () {
         return tooltip.style('visibility', 'visible')
       })
       .on('mousemove', () => tooltip
-        .style('top', (d3.event.pageY - 10) + 'px')
-        .style('left', (d3.event.pageX + 10) + 'px'))
+        .style('top', (d3.event.pageY - 15) + 'px')
+        .style('right', (document.body.offsetWidth - d3.event.pageX + 20) + 'px'))
       .on('mouseout', function (_) {
         svg.selectAll('path')
           .filter((d) => (d && d.length > 0 && d[0].countryIndex === i))
