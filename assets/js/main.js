@@ -523,6 +523,7 @@ async function main () {
   document.addEventListener('keydown', (event) => {
     if (!event.ctrlKey && !event.altKey) {
       switch (event.key) {
+        case 'c': toggleCumulative(); break
         case 'l': toggleLog(); break
         case 'n': toggleNormalize(); break
         case 'd': nextDataSet(); break
