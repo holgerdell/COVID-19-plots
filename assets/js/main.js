@@ -379,63 +379,67 @@ function onStateChange () {
   })
 
   const legend = d3.select('#legend > .choices')
-  legend.html(null) // delete all children
-  for (let i = 0; i < state.countries.length; i++) {
-    const item = legend.append('div').classed('curve selected', true)
-    item.append('span')
-      .classed('avatar', true)
-      .style('background-color', color(i, state.countries.length))
-      .text(countries.getInfo(state.countries[i]).code)
-    item.append('span')
-      .classed('label', true)
-      .text(state.countries[i])
-    item
-      .on('click', function (_) {
-        state.countries = state.countries.filter(function (value, index, arr) {
-          return value !== state.countries[i]
-        })
-        onStateChange()
-      })
-      .on('mouseover', function (_) {
-        svg.selectAll('path')
-          .filter((d) => (d && d.length > 0 && d[0].countryIndex === i))
-          .transition().attr('stroke-width', 2 * PLOT_LINE_STROKE_WIDTH)
-        svg.selectAll('circle')
-          .filter((d) => d.countryIndex === i)
-          .transition().attr('r', 2 * PLOT_CIRCLE_RADIUS)
-        tooltip.html('Population: ' + countries.getInfo(state.countries[i]).population.toLocaleString())
-        return tooltip.style('visibility', 'visible')
-      })
-      .on('mousemove', () => tooltip
-        .style('top', (d3.event.pageY - 15) + 'px')
-        .style('right', (document.body.offsetWidth - d3.event.pageX + 20) + 'px'))
-      .on('mouseout', function (_) {
-        svg.selectAll('path')
-          .filter((d) => (d && d.length > 0 && d[0].countryIndex === i))
-          .transition().attr('stroke-width', PLOT_LINE_STROKE_WIDTH)
-        svg.selectAll('circle')
-          .filter((d) => d.countryIndex === i)
-          .transition().attr('r', PLOT_CIRCLE_RADIUS)
-        return tooltip.style('visibility', 'hidden')
-      })
-  }
 
-  /* Draw currently inactive countries */
-  countries.forEach(function (c) {
-    if (!(state.countries.includes(c.country))) {
-      const item = legend.append('div').classed('curve', true)
-      item.append('span')
-        .classed('avatar', true)
-        .text(c.code)
-      item.append('span')
-        .classed('label', true)
-        .text(c.country)
-      item.on('click', function (_) {
+  /* collect country data */
+  let allCountries = Object.values(countries.getAll())
+  for (const c of allCountries) {
+    c.idx = state.countries.findIndex((n) => n === c.country)
+    c.isSelected = c.idx >= 0
+  }
+  const selected = allCountries.filter(c => c.isSelected)
+  const unselected = allCountries.filter(c => !c.isSelected)
+  allCountries = selected.concat(unselected)
+
+  /* this is a hack an should be replaced with selection.join() */
+  legend.html('')
+
+  const item = legend.selectAll('div').data(allCountries, c => c.country).enter().append('div')
+
+  item
+    .classed('curve', true)
+    .classed('selected', c => c.isSelected)
+    .append('span')
+    .classed('avatar', true)
+    .style('background-color', c => (c.isSelected) ? color(c.idx, state.countries.length) : undefined)
+    .text(c => c.code)
+  item
+    .append('span')
+    .classed('label', true)
+    .text(c => c.country)
+  item
+    .on('click', function (c) {
+      if (c.isSelected) {
+        state.countries = state.countries.filter(function (value, _) {
+          console.log(value)
+          return value !== c.country
+        })
+      } else {
         state.countries.push(c.country)
-        onStateChange()
-      })
-    }
-  })
+      }
+      onStateChange()
+    })
+    .on('mouseover', function (c) {
+      svg.selectAll('path')
+        .filter((d) => (d && d.length > 0 && d[0].countryIndex === c.idx))
+        .transition().attr('stroke-width', 2 * PLOT_LINE_STROKE_WIDTH)
+      svg.selectAll('circle')
+        .filter((d) => d.countryIndex === c.idx)
+        .transition().attr('r', 2 * PLOT_CIRCLE_RADIUS)
+      tooltip.html('Population: ' + c.population.toLocaleString())
+      return tooltip.style('visibility', 'visible')
+    })
+    .on('mousemove', () => tooltip
+      .style('top', (d3.event.pageY - 15) + 'px')
+      .style('right', (document.body.offsetWidth - d3.event.pageX + 20) + 'px'))
+    .on('mouseout', function (c) {
+      svg.selectAll('path')
+        .filter((d) => (d && d.length > 0 && d[0].countryIndex === c.idx))
+        .transition().attr('stroke-width', PLOT_LINE_STROKE_WIDTH)
+      svg.selectAll('circle')
+        .filter((d) => d.countryIndex === c.idx)
+        .transition().attr('r', PLOT_CIRCLE_RADIUS)
+      return tooltip.style('visibility', 'hidden')
+    })
 
   // Populate datalist for search feature
   const datalist = d3.select('#datalist-countries')

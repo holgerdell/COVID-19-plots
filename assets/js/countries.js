@@ -62,6 +62,14 @@ export function getInfo (country) {
   }
 }
 
+export function getAll () {
+  if (countries === undefined) {
+    console.error('Must load data first')
+  } else {
+    return countries
+  }
+}
+
 const KEY_YEAR = 'Year'
 const KEY_VALUE = 'Value'
 const KEY_NAME = 'Country Name'
