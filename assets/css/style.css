@@ -4,11 +4,10 @@ body {
   font-family: "Times", "Georgia", serif;
   grid-gap: 0;
   grid-template-areas:
-    "header legend"
     "main   legend"
     "nav    nav";
   grid-template-columns: 1fr 0;
-  grid-template-rows: 0 auto max-content;
+  grid-template-rows: auto max-content;
   height: 100vh;
   margin: 0;
   padding: 0;
@@ -126,12 +125,6 @@ nav,
   font-family: sans-serif;
 }
 
-/*
-#legend > .choices > .curve.selected > span.label {
-  font-weight: bold;
-}
-*/
-
 #legend > .search {
   grid-area: search;
   padding: 10px;
@@ -162,21 +155,18 @@ nav {
   display: grid;
   grid-area: nav;
   grid-gap: 0;
-  grid-template-areas: "help cumulative log normalize datasets align";
-  grid-template-columns: repeat(auto-fit, max-content);
-  grid-template-rows: 1;
+}
+
+@media only screen and (max-width: 699px) {
+  nav {
+    grid-template-columns: repeat(20, max-content);
+    grid-template-rows: 1;
+  }
 }
 
 @media only screen and (min-width: 700px) {
   nav {
-    grid-template-areas:
-      "help"
-      "cumulative"
-      "log"
-      "normalize"
-      "datasets"
-      "align";
-    grid-template-columns: repeat(1, max-content);
+    grid-template-columns: 1fr;
     grid-template-rows: repeat(20, max-content);
     padding-top: 1em;
   }
@@ -197,17 +187,10 @@ nav > div {
   width: 40px;
 }
 
-#help { grid-area: help; }
-#cumulative { grid-area: cumulative; }
-#log { grid-area: log; }
-#normalize { grid-area: normalize; }
-
 #datasets {
-  grid-area: datasets;
   color: white;
   background-color: #777;
 }
-#align { grid-area: align; }
 
 nav > div > div {
   border-radius: 1em;
