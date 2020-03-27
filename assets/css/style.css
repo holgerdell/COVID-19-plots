@@ -234,7 +234,7 @@ nav > div.disabled {
 }
 
 nav > div:not(.disabled) {
-  cursor: pointer
+  cursor: pointer;
 }
 
 nav > div:not(.disabled):hover {
