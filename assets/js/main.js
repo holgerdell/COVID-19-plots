@@ -350,6 +350,7 @@ function onStateChange () {
     /* draw the plot for each country */
 
     const line = d3.line()
+      .curve(d3.curveMonotoneX)
       .x((d) => x(d.x))
       .y((d) => y(d.y))
 
