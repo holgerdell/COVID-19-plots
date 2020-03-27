@@ -162,7 +162,7 @@ nav {
   display: grid;
   grid-area: nav;
   grid-gap: 0;
-  grid-template-areas: "help log normalize datasets align";
+  grid-template-areas: "help cumulative log normalize datasets align";
   grid-template-columns: repeat(auto-fit, max-content);
   grid-template-rows: 1;
 }
@@ -171,6 +171,7 @@ nav {
   nav {
     grid-template-areas:
       "help"
+      "cumulative"
       "log"
       "normalize"
       "datasets"
@@ -183,7 +184,6 @@ nav {
 
 nav > div {
   border-radius: 20px;
-  cursor: pointer;
   font-family: monospace;
   font-size: large;
   height: 40px;
@@ -198,6 +198,7 @@ nav > div {
 }
 
 #help { grid-area: help; }
+#cumulative { grid-area: cumulative; }
 #log { grid-area: log; }
 #normalize { grid-area: normalize; }
 
@@ -227,11 +228,20 @@ nav > div.toggled {
   background-color: #ddd;
 }
 
-nav > div:hover {
+nav > div.disabled {
+  color: #ddd;
+  background-color: #eee;
+}
+
+nav > div:not(.disabled) {
+  cursor: pointer
+}
+
+nav > div:not(.disabled):hover {
   background-color: #cecef6;
 }
 
-nav > div:hover > div {
+nav > div:not(.disabled):hover > div {
   background-color: #cecef6;
   visibility: visible;
 }

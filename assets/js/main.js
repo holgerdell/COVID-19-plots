@@ -17,6 +17,7 @@ let state = {}
  * new toggles and options can simply be added here */
 const defaultState = {
   align: false,
+  cumulative: true,
   normalize: true,
   logplot: true,
   legend: true,
@@ -210,13 +211,23 @@ function getValue (
   * Its purpose is to update the view state.
  */
 function onStateChange () {
+  console.debug('Using dataset', state.dataset)
+
+  state.logplot = state.logplot && state.cumulative
+
   setDisplayedUrlQuerystring(makeUrlQuerystring(state))
 
   const tooltip = d3.select('#tooltip')
   tooltip.style('visibility', 'hidden')
 
   d3.select('body').classed('loading', false)
+  d3.select('#cumulative').classed('toggled', state.cumulative)
   d3.select('#log').classed('toggled', state.logplot)
+  d3.select('#log').classed('disabled', !state.cumulative)
+  document.getElementById('log').removeEventListener('click', toggleLog)
+  if (state.cumulative) {
+    document.getElementById('log').addEventListener('click', toggleLog)
+  }
   d3.select('#normalize').classed('toggled', state.normalize)
   d3.select('#align').classed('toggled', state.align)
 
@@ -246,35 +257,29 @@ function onStateChange () {
     }
   }
 
-  let xmax = -Infinity
-  let xmin = Infinity
-  Object.keys(timeseriesData).forEach(function (datestring) {
-    if (timeseriesData[datestring][state.dataset]) {
-      const date = timeseriesData[datestring].Date
-      if (date < xmin) xmin = date
-      if (date > xmax) xmax = date
-    }
-  })
-
   const massaged = []
-  let span = 1
 
   state.countries.forEach((c, i) => {
     let firstDateAboveThreshold
+    let previousValue = 0
     /* Massage the data for this country */
     const countryData = []
     for (const d of timeseriesData) {
-      const yvalue = getValue(d, c, state.dataset, state.normalize)
-      if (!isNaN(yvalue) && yvalue !== undefined && yvalue > 0) {
+      const cumulative = getValue(d, c, state.dataset, state.normalize)
+      if (!isNaN(cumulative) && cumulative !== undefined && cumulative > 0) {
+        let yvalue = cumulative
+        if (!state.cumulative) {
+          yvalue -= previousValue
+          previousValue = cumulative
+        }
         let xvalue
         if (!state.align) {
           xvalue = d.Date
         } else {
           const threshold = (state.normalize) ? ALIGN_THRESHOLD_NORMALIZED : ALIGN_THRESHOLD
-          if (firstDateAboveThreshold === undefined && yvalue >= threshold) firstDateAboveThreshold = d.Date
+          if (firstDateAboveThreshold === undefined && cumulative >= threshold) firstDateAboveThreshold = d.Date
           if (firstDateAboveThreshold !== undefined) {
             xvalue = (d.Date - firstDateAboveThreshold) / MILLISECONDS_IN_A_DAY
-            span = Math.max(span, xvalue)
           }
         }
         if (xvalue !== undefined) {
@@ -292,11 +297,25 @@ function onStateChange () {
     massaged.push(countryData)
   })
 
+  let xmax = -Infinity
+  let xmin = Infinity
+  let ymax = -Infinity
+  let ymin = Infinity
+  massaged.forEach((countryData) => {
+    for (const { x: xvalue, y: yvalue } of countryData) {
+      if (xvalue > xmax) xmax = xvalue
+      if (xvalue < xmin) xmin = xvalue
+      if (yvalue > ymax) ymax = yvalue
+      if (yvalue < ymin) ymin = yvalue
+    }
+  })
+  console.debug('Domain from', ymin, 'to', ymax)
+
   /* x is a function that maps Date objects to x-coordinates on-screen */
   let x = null
   if (state.align) {
     x = d3.scaleLinear()
-      .domain([0, span]).nice()
+      .domain([xmin, xmax]).nice()
       .range([margin.left, width - margin.right])
   } else {
     x = d3.scaleUtc()
@@ -308,22 +327,6 @@ function onStateChange () {
   svg.append('g')
     .call(d3.axisBottom(x))
     .attr('transform', `translate(0,${height - margin.bottom})`)
-
-  console.debug('Using dataset', state.dataset)
-
-  let ymax = -Infinity
-  let ymin = Infinity
-  for (let i = 0; i < state.countries.length; i++) {
-    const c = state.countries[i]
-    for (const row of timeseriesData) {
-      const value = getValue(
-        row, c, state.dataset, state.normalize
-      )
-      if (value !== undefined && value > ymax) ymax = value
-      if (value !== undefined && value < ymin && value > 0) ymin = value
-    }
-  }
-  console.debug('Domain from', ymin, 'to', ymax)
 
   /* y is a function that maps values to y-coordinates on-screen */
   const y = ((state.logplot) ? d3.scaleLog() : d3.scaleLinear())
@@ -512,38 +515,18 @@ async function main () {
   onStateChange()
 
   /* Hook up event listeners to change the model state */
-  const switchlog = () => {
-    state.logplot = !state.logplot
-    onStateChange()
-  }
-  d3.select('#log').on('click', switchlog)
-
-  const switchnormalize = () => {
-    state.normalize = !state.normalize
-    onStateChange()
-  }
-  d3.select('#normalize').on('click', switchnormalize)
-
-  const switchdatasets = function (stepsize = 1) {
-    const ds = getDatasets()
-    const i = ds.indexOf(state.dataset)
-    state.dataset = ds[(i + stepsize + ds.length) % ds.length]
-    onStateChange()
-  }
-  d3.select('#datasets').on('click', switchdatasets)
-  const toggleAlign = () => {
-    state.align = !state.align
-    onStateChange()
-  }
+  d3.select('#cumulative').on('click', toggleCumulative)
+  d3.select('#normalize').on('click', toggleNormalize)
   d3.select('#align').on('click', toggleAlign)
+  d3.select('#datasets').on('click', nextDataSet)
 
   document.addEventListener('keydown', (event) => {
     if (!event.ctrlKey && !event.altKey) {
       switch (event.key) {
-        case 'l': switchlog(); break
-        case 'n': switchnormalize(); break
-        case 'd': switchdatasets(); break
-        case 'D': switchdatasets(-1); break
+        case 'l': toggleLog(); break
+        case 'n': toggleNormalize(); break
+        case 'd': nextDataSet(); break
+        case 'D': prevDataSet(); break
         case 'a': toggleAlign(); break
       }
     }
@@ -595,5 +578,36 @@ async function main () {
   document.getElementById('search')
     .addEventListener('keydown', (e) => e.stopPropagation())
 }
+
+function toggleCumulative () {
+  state.cumulative = !state.cumulative
+  onStateChange()
+}
+
+function toggleLog () {
+  state.logplot = !state.logplot
+  onStateChange()
+}
+
+function toggleNormalize () {
+  state.normalize = !state.normalize
+  onStateChange()
+}
+
+function toggleAlign () {
+  state.align = !state.align
+  onStateChange()
+}
+
+function switchdatasets (stepsize) {
+  const ds = getDatasets()
+  const oldIndex = ds.indexOf(state.dataset)
+  const newIndex = (oldIndex + stepsize + ds.length) % ds.length
+  state.dataset = ds[newIndex]
+  onStateChange()
+}
+
+const nextDataSet = () => switchdatasets(+1)
+const prevDataSet = () => switchdatasets(-1)
 
 window.onload = main
