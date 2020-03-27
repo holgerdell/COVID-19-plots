@@ -309,7 +309,9 @@ function onStateChange () {
       if (yvalue < ymin) ymin = yvalue
     }
   })
-  console.debug('Domain from', ymin, 'to', ymax)
+  if (!state.logplot) ymin = 0
+  console.debug(`x-axis from ${xmin} to ${xmax}`)
+  console.debug(`y-axis from ${ymin} to ${ymax}`)
 
   /* x is a function that maps Date objects to x-coordinates on-screen */
   let x = null
@@ -330,7 +332,7 @@ function onStateChange () {
 
   /* y is a function that maps values to y-coordinates on-screen */
   const y = ((state.logplot) ? d3.scaleLog() : d3.scaleLinear())
-    .domain([ymin, ymax]).nice()
+    .domain([ymin, ymax])
     .range([height - margin.bottom, margin.top])
 
   /* draw the y-axis */
