@@ -38,10 +38,10 @@ export function canonicalCountryName (country) {
 /* Variable (local to this module) that holds the population data */
 let countries
 
-export async function load (nameSet = Set()) {
+export async function load (nameSet) {
   const URL = 'https://raw.githubusercontent.com/datasets/population/master/data/population.csv'
   let rows = await d3.csv(URL, sanitize)
-  rows = selectNames(nameSet, rows)
+  if (nameSet !== undefined) rows = selectNames(nameSet, rows)
   countries = itertools.group(rows, 'country')
   countries = selectLatestYear(countries)
 }
@@ -57,16 +57,35 @@ export function forEach (f) {
 export function getInfo (country) {
   if (countries === undefined) {
     console.error('Must load data first')
+  } else if (countries[country] === undefined) {
+    // console.debug(`Population data for ${country} is not available.`)
   } else {
     return countries[country]
   }
 }
 
-export function getAll () {
+/** Return a list of all country entries.
+ *
+ * @param {List} first if defined, yield these countries first
+ * @param {Set} restrict if defined, only yield countries from this set
+ */
+export function * getAll (first = [], restrict) {
   if (countries === undefined) {
     console.error('Must load data first')
   } else {
-    return countries
+    for (const c of first) {
+      yield countries[c]
+    }
+    first = new Set(first)
+    const seq = (restrict !== undefined) ? restrict : Object.keys(countries)
+    if (!first.has('World') && seq.has('World') && countries.World !== undefined) {
+      yield countries.World
+    }
+    for (const c of seq) {
+      if (!first.has(c) && c !== 'World' && countries[c] !== undefined) {
+        yield countries[c]
+      }
+    }
   }
 }
 
@@ -100,4 +119,14 @@ function selectLatestYear (countries) {
     countries[c] = maxe
   }
   return countries
+}
+
+export function restrict (names) {
+  const newCountries = {}
+  for (const n of names) {
+    if (countries[n] !== undefined) {
+      newCountries[n] = countries[n]
+    }
+  }
+  countries = newCountries
 }

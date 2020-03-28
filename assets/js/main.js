@@ -1,11 +1,9 @@
 /* COVID-19-plots.js | MIT License | github.com/holgerdell/COVID-19-plots */
 
 import * as string from './lib/string.js'
-import * as itertools from './lib/itertools.js'
 import * as functools from './lib/functools.js'
-import * as jh from './jh.js'
+import * as data from './data.js'
 import * as countries from './countries.js'
-import * as owid from './owid.js'
 
 const DELAY_DEBOUNCE_SEARCH = 200
 const MILLISECONDS_IN_A_DAY = 1000 * 60 * 60 * 24
@@ -21,14 +19,11 @@ const defaultState = {
   normalize: true,
   logplot: true,
   legend: true,
-  dataset: 'owid_' + owid.TYPE_CASES,
+  dataset: data.defaultDataset,
   countries: [
     'China', 'Italy', 'Denmark', 'Germany', 'Sweden', 'Greece', 'France'
   ]
 }
-
-/* The data never changes after it is put in this dict by the main function. */
-let timeseriesData = {}
 
 /* Style configuration */
 const PLOT_CIRCLE_RADIUS = 3
@@ -37,14 +32,6 @@ const PLOT_LINE_STROKE_WIDTH = 3
 /* Align curve threshold */
 const ALIGN_THRESHOLD_NORMALIZED = 0.1 // align to first day >= 0.1 cases per 100,000
 const ALIGN_THRESHOLD = 100 // align to first day with >= 100 cases
-
-/** Return all available datasets
-  * @return {List} of Strings
-  */
-function getDatasets () {
-  return jh.types.map((x) => `jh_${x}`)
-    .concat(owid.types.map((x) => `owid_${x}`))
-}
 
 /** Given an object and the total number of objects, returns a color
   * @param {Number} obj is the current object (between 0 and numObjects-1)
@@ -161,14 +148,7 @@ function setDisplayedUrlQuerystring (querystring) {
   * @return {String} human-readable description of the scale of the y-axis
   */
 function ylabel (state) {
-  let ylabel = ''
-  if (state.dataset === 'jh_' + jh.TYPE_CONFIRMED || state.dataset === 'owid_' + owid.TYPE_CASES) {
-    ylabel = 'Confirmed Infections'
-  } else if (state.dataset === 'jh_' + jh.TYPE_DEATHS || state.dataset === 'owid_' + owid.TYPE_DEATHS) {
-    ylabel = 'Confirmed Deaths'
-  } else if (state.dataset === 'jh_' + jh.TYPE_RECOVERED) {
-    ylabel = 'Confirmed Recovered'
-  }
+  let ylabel = data.describe(state.dataset)
   if (state.normalize) {
     ylabel += ' (per 100,000 inhabitants)'
   }
@@ -179,38 +159,10 @@ function ylabel (state) {
   return ylabel
 }
 
-/** This function returns a value of a given row of timeseriesData.
-  * @param {Dictionary} row
-  * @param {String} country
-  * @param {String} dataset
-  * @param {Boolean} normalize divide by population size or not?
-  *
-  * @return {Number}
-  */
-function getValue (
-  row,
-  country,
-  dataset = state.dataset,
-  normalize = state.normalize) {
-  if (row[dataset] === undefined || row[dataset][country] === undefined) {
-    return undefined
-  } else {
-    let value = row[dataset][country]
-    if (!(typeof value === 'number')) {
-      console.error('Error:', dataset, country, value, 'is not a number')
-    }
-    if (normalize) {
-      value = value * 100000.0 /
-        parseInt(countries.getInfo(country).population, 10)
-    }
-    return value
-  }
-}
-
 /** This function is called when the model state has changed.
   * Its purpose is to update the view state.
  */
-function onStateChange () {
+async function onStateChange () {
   console.debug('Using dataset', state.dataset)
 
   state.logplot = state.logplot && state.cumulative
@@ -237,7 +189,7 @@ function onStateChange () {
     d3.select('#align > div').text(`Align by first day with ${ALIGN_THRESHOLD} cases [a]`)
   }
 
-  const datasets = getDatasets()
+  const datasets = data.availableDatasets()
   const datasetButtonColor = color(datasets.indexOf(state.dataset), datasets.length)
   d3.select('#datasets').style('background-color', datasetButtonColor)
 
@@ -257,43 +209,39 @@ function onStateChange () {
     }
   }
 
-  const massaged = []
+  await data.fetchTimeSeriesData(state.dataset)
 
-  state.countries.forEach((c, i) => {
+  const massaged = []
+  state.countries.forEach(function (c, i) {
     let firstDateAboveThreshold
     let previousValue = 0
     /* Massage the data for this country */
-    const countryData = []
-    for (const d of timeseriesData) {
-      const cumulative = getValue(d, c, state.dataset, state.normalize)
+    let countryData = data.getTimeSeries(c, state.dataset)
+    for (const d of countryData) {
+      d.countryIndex = i
+      const cumulative = (state.normalize) ? d.normalized_value : d.value
       if (!isNaN(cumulative) && cumulative !== undefined && cumulative > 0) {
-        let yvalue = cumulative
+        d.y = cumulative
         if (!state.cumulative) {
-          yvalue -= previousValue
+          d.y -= previousValue
           previousValue = cumulative
         }
-        let xvalue
         if (!state.align) {
-          xvalue = d.Date
+          d.x = d.date
         } else {
           const threshold = (state.normalize) ? ALIGN_THRESHOLD_NORMALIZED : ALIGN_THRESHOLD
-          if (firstDateAboveThreshold === undefined && cumulative >= threshold) firstDateAboveThreshold = d.Date
-          if (firstDateAboveThreshold !== undefined) {
-            xvalue = (d.Date - firstDateAboveThreshold) / MILLISECONDS_IN_A_DAY
+          if (firstDateAboveThreshold === undefined && cumulative >= threshold) {
+            firstDateAboveThreshold = d.date
           }
-        }
-        if (xvalue !== undefined) {
-          countryData.push({
-            date: d.Date,
-            value: yvalue,
-            country: c,
-            countryIndex: i,
-            x: xvalue,
-            y: yvalue
-          })
+          if (firstDateAboveThreshold !== undefined) {
+            d.x = (d.date - firstDateAboveThreshold) / MILLISECONDS_IN_A_DAY
+          } else {
+            d.x = undefined
+          }
         }
       }
     }
+    countryData = countryData.filter((d) => d.x !== undefined)
     massaged.push(countryData)
   })
 
@@ -302,11 +250,11 @@ function onStateChange () {
   let ymax = -Infinity
   let ymin = Infinity
   massaged.forEach((countryData) => {
-    for (const { x: xvalue, y: yvalue } of countryData) {
-      if (xvalue > xmax) xmax = xvalue
-      if (xvalue < xmin) xmin = xvalue
-      if (yvalue > ymax) ymax = yvalue
-      if (yvalue < ymin) ymin = yvalue
+    for (const d of countryData) {
+      if (d.x > xmax) xmax = d.x
+      if (d.x < xmin) xmin = d.x
+      if (d.y > ymax) ymax = d.y
+      if (d.y < ymin) ymin = d.y
     }
   })
   if (!state.logplot) ymin = 0
@@ -387,14 +335,12 @@ function onStateChange () {
   const legend = d3.select('#legend > .choices')
 
   /* collect country data */
-  let allCountries = Object.values(countries.getAll())
+  let allCountries = countries.getAll(state.countries, data.getCountries(state.dataset))
+  allCountries = Array.from(allCountries)
   for (const c of allCountries) {
     c.idx = state.countries.findIndex((n) => n === c.country)
     c.isSelected = c.idx >= 0
   }
-  const selected = allCountries.filter(c => c.isSelected)
-  const unselected = allCountries.filter(c => !c.isSelected)
-  allCountries = selected.concat(unselected)
 
   /* this is a hack an should be replaced with selection.join() */
   legend.html('')
@@ -416,7 +362,6 @@ function onStateChange () {
     .on('click', function (c) {
       if (c.isSelected) {
         state.countries = state.countries.filter(function (value, _) {
-          console.log(value)
           return value !== c.country
         })
       } else {
@@ -455,65 +400,11 @@ function onStateChange () {
   })
 }
 
-/** This function retrieves and massages the data
-  * @return {Dictionary} the data dictionary
-  */
-async function getData () {
-  let rows = await owid.load()
-  for (const type of jh.types) {
-    rows = rows.concat(await jh.load(type))
-  }
-
-  for (const row of rows) {
-    row.date = d3.timeParse('%Y-%m-%d')(row.datestring)
-  }
-
-  const allCountries = new Set()
-  for (const row of rows) {
-    allCountries.add(row.country)
-  }
-  await countries.load(allCountries)
-
-  /* now convert data to old data model (TODO: update consumers of getData()) */
-
-  /* turn into dictionary, with "datestrings" as keys */
-  const byDateSourceCountry = itertools.group(rows, 'datestring')
-
-  for (const datestring of Object.keys(byDateSourceCountry)) {
-    /* turn into dictionary, with "source" as keys */
-    byDateSourceCountry[datestring] =
-      itertools.group(byDateSourceCountry[datestring], 'source')
-    for (const source of Object.keys(byDateSourceCountry[datestring])) {
-      /* turn into dictionary, with "country" as keys */
-      byDateSourceCountry[datestring][source] =
-        itertools.group(byDateSourceCountry[datestring][source], 'country')
-      /* now turn the row object into row.value */
-      for (const country
-        of Object.keys(byDateSourceCountry[datestring][source])) {
-        if (byDateSourceCountry[datestring][source][country].length !== 1) {
-          console.error(datestring, source, country,
-            byDateSourceCountry[datestring][source][country])
-        }
-        byDateSourceCountry[datestring][source][country] =
-          byDateSourceCountry[datestring][source][country][0].value
-      }
-    }
-    byDateSourceCountry[datestring].Date =
-      d3.timeParse('%Y-%m-%d')(datestring)
-  }
-
-  /* now forget the top-level grouping by date, but sort by date */
-  timeseriesData = Object.values(byDateSourceCountry)
-  timeseriesData.sort(function (a, b) {
-    return a.Date < b.Date ? -1 : a.Date > b.Date ? 1 : 0
-  })
-}
-
 /** The main function is called when the page has loaded */
 async function main () {
   state = parseUrlArgs()
 
-  await getData()
+  await countries.load()
 
   onStateChange()
 
@@ -604,7 +495,7 @@ function toggleAlign () {
 }
 
 function switchdatasets (stepsize) {
-  const ds = getDatasets()
+  const ds = data.availableDatasets()
   const oldIndex = ds.indexOf(state.dataset)
   const newIndex = (oldIndex + stepsize + ds.length) % ds.length
   state.dataset = ds[newIndex]
