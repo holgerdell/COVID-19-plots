@@ -2,26 +2,42 @@
 
 import * as string from './lib/string.js'
 import * as functools from './lib/functools.js'
+import * as hash from './lib/hash.js'
 import * as data from './data.js'
 import * as countries from './countries.js'
 
-/* We insist that the entire program's model state is stored in this dict. */
-let state = {}
+const defaultCountries = [
+  'China', 'Italy', 'Denmark', 'Germany', 'Sweden', 'Greece', 'France'
+]
 
 /* This dictionary holds the default values for the state
  * new toggles and options can simply be added here */
 const defaultState = {
-  plot: 'time',
-  align: false,
-  cumulative: true,
-  normalize: true,
-  logplot: true,
-  legend: true,
+  plot: 'calendar',
   dataset: data.defaultDataset,
-  countries: [
-    'China', 'Italy', 'Denmark', 'Germany', 'Sweden', 'Greece', 'France'
-  ]
+  countries: defaultCountries,
+  params: {
+    'calendar': {
+      align: false,
+      cumulative: true,
+      normalize: true,
+      logplot: true,
+      smooth: true,
+    },
+    'trajectory': {
+      align: false,
+      logplot: true,
+      smooth: true,
+    },
+  },
 }
+
+const getState = () => {
+  const state = hash.get(defaultState)
+  console.debug(state)
+  return state
+}
+const updateState = (update) => hash.update(update)
 
 /* Search configuration */
 const DELAY_DEBOUNCE_SEARCH = 200
@@ -59,92 +75,6 @@ function color (obj, numObjects) {
   else return d3.color(d3.interpolateCool(2 - fraction)).darker(0.2)
 }
 
-/** This function parses the URL parameters and returns an argv dictionary.
-  * Also sets default values for known parameters.
-  *
-  * @return {Dictionary} a dictionary of all arguments
-  */
-function parseUrlArgs () {
-  const argv = {}
-  let match
-  const pl = /\+/g
-  const search = /([^&=]+)=?([^&]*)/g
-  const decode = (s) => decodeURIComponent(s.replace(pl, ' '))
-  const query = window.location.search.substring(1)
-
-  while ((match = search.exec(query)) !== null) {
-    argv[decode(match[1])] = decode(match[2])
-  }
-
-  Object.keys(defaultState).forEach(function (key) {
-    if (typeof defaultState[key] === 'boolean') {
-      if (argv[key]) {
-        argv[key] = (argv[key] === 'true')
-      } else {
-        argv[key] = defaultState[key]
-      }
-    } else if (typeof defaultState[key] === 'string') {
-      if (!argv[key]) {
-        argv[key] = defaultState[key]
-      }
-    } else if (typeof defaultState[key] === 'object') {
-      if (argv[key]) {
-        argv[key] = argv[key].split(';')
-      } else {
-        argv[key] = defaultState[key]
-      }
-    }
-  })
-  return argv
-}
-
-/** This function is the inverse of parseUrlArgs.
-  * @param {Dictionary} argv dictionary that is to be turned into URL arguments
-  *
-  * @return {String}
-  */
-function makeUrlQuerystring (argv) {
-  let url = ''
-  Object.keys(defaultState).forEach(function (key) {
-    if (typeof defaultState[key] === 'boolean' ||
-      typeof defaultState[key] === 'string') {
-      if (argv[key] !== defaultState[key]) {
-        url += key + '=' + argv[key] + '&'
-      }
-    } else if (typeof defaultState[key] === 'object') {
-      if (argv[key] !== defaultState[key]) {
-        url += key + '='
-        for (const i of Object.keys(argv[key])) {
-          const c = argv[key][i]
-          url += c
-          if (i < argv[key].length - 1) {
-            url += ';'
-          }
-        }
-        url += '&'
-      }
-    }
-  })
-  return url.slice(0, -1)
-}
-
-/** This function sets the URL that the browser displays
-  * @param {String} querystring
-  */
-function setDisplayedUrlQuerystring (querystring) {
-  const url = window.location.href
-  const urlParts = url.split('?')
-  if (urlParts.length > 0) {
-    const baseUrl = urlParts[0]
-    // const oldQuerystring = urlParts[1];
-
-    const updatedQueryString = querystring
-
-    let updatedUri = baseUrl
-    if (updatedQueryString !== '') updatedUri += '?' + updatedQueryString
-    window.history.replaceState({}, document.title, updatedUri)
-  }
-}
 
 /** Get a nice label for the y-axis
   * @param {Dictionary} state is the current state
@@ -152,13 +82,22 @@ function setDisplayedUrlQuerystring (querystring) {
   * @return {String} human-readable description of the scale of the y-axis
   */
 function ylabel (state) {
-  let ylabel = data.describe(state.dataset)
-  if (state.normalize) {
+  let ylabel = ''
+  ylabel += string.capitalize(state.plot)
+  ylabel += ' plot for '
+  ylabel += data.describe(state.dataset)
+  if (state.plot === 'calendar' && !state.params[state.plot].cumulative) {
+    ylabel += ' per day'
+  }
+  if (state.params[state.plot].normalize) {
     ylabel += ' (per 100,000 inhabitants)'
   }
   ylabel += ' [dataset ' + state.dataset + ']'
-  if (state.logplot) {
+  if (state.params[state.plot].logplot) {
     ylabel += ' [log-plot]'
+  }
+  if (state.params[state.plot].smooth) {
+    ylabel += ' [smooth]'
   }
   return ylabel
 }
@@ -167,21 +106,25 @@ function ylabel (state) {
   * Its purpose is to update the view state.
  */
 async function onStateChange () {
-  console.debug('Using dataset', state.dataset)
+  console.debug('onStateChange')
+  const state = getState()
 
-  state.logplot = state.logplot && state.cumulative // cannot be both logplot and cumulative ?
-
-  setDisplayedUrlQuerystring(makeUrlQuerystring(state))
-
-  d3.select('#tooltip').style('visibility', 'hidden')
-  drawNav(state)
-  await drawPlot(state) // timeSeriesData is loaded here
-  drawLegend(state) // requires timeSeriesData to be loaded
+  const logplot = state.params.calendar.logplot && state.params.calendar.cumulative // cannot be both logplot and non-cumulative ?
+  if (state.plot === 'calendar' && logplot !== state.params.calendar.logplot) {
+    updateState({ params : { calendar : { logplot } } })
+  }
+  else {
+    d3.select('#tooltip').style('visibility', 'hidden')
+    drawNav(state)
+    await drawPlot(state) // timeSeriesData is loaded here
+    drawLegend(state) // requires timeSeriesData to be loaded
+  }
 }
 
 async function drawPlot ( state ) {
 
   const tooltip = d3.select('#tooltip')
+  const params = state.params[state.plot]
 
   const width = document.getElementById('main').offsetWidth
   const height = document.getElementById('main').offsetHeight
@@ -209,19 +152,33 @@ async function drawPlot ( state ) {
     let previousValue = 0
     /* Massage the data for this country */
     let countryData = data.getTimeSeries(c, state.dataset)
+    const smoothness = 3; // number of days to average on
+    const buffer = [];
+    for (let i = 0; i < smoothness; ++i) {
+      buffer.push(0)
+    }
     for (const d of countryData) {
       d.countryIndex = i
-      const cumulative = (state.normalize) ? d.normalized_value : d.value
+      let cumulative = (params.normalize) ? d.normalized_value : d.value
+      if (params.smooth) {
+        buffer.splice(0,1)
+        buffer.push(cumulative)
+        cumulative = buffer.reduce((x,y) => x+y) / buffer.length
+      }
       if (!isNaN(cumulative) && cumulative !== undefined && cumulative > 0) {
         d.y = cumulative
-        if (!state.cumulative) {
+        if (!params.cumulative || state.plot === 'trajectory') {
           d.y -= previousValue
+          if (params.logplot) d.y = Math.max(d.y, 1)
           previousValue = cumulative
         }
-        if (!state.align) {
+        if (state.plot === 'trajectory') {
+          d.x = cumulative
+        }
+        else if (!params.align) {
           d.x = d.date
         } else {
-          const threshold = (state.normalize) ? ALIGN_THRESHOLD_NORMALIZED : ALIGN_THRESHOLD
+          const threshold = (params.normalize) ? ALIGN_THRESHOLD_NORMALIZED : ALIGN_THRESHOLD
           if (firstDateAboveThreshold === undefined && cumulative >= threshold) {
             firstDateAboveThreshold = d.date
           }
@@ -249,13 +206,18 @@ async function drawPlot ( state ) {
       if (d.y < ymin) ymin = d.y
     }
   })
-  if (!state.logplot) ymin = 0
+  if (!params.logplot) ymin = 0
   console.debug(`x-axis from ${xmin} to ${xmax}`)
   console.debug(`y-axis from ${ymin} to ${ymax}`)
 
   /* x is a function that maps Date objects to x-coordinates on-screen */
   let x = null
-  if (state.align) {
+  if (state.plot === 'trajectory') {
+    x = ((params.logplot) ? d3.scaleLog() : d3.scaleLinear())
+      .domain([xmin, xmax])
+      .range([margin.left, width - margin.right])
+  }
+  else if (params.align) {
     x = d3.scaleLinear()
       .domain([xmin, xmax]).nice()
       .range([margin.left, width - margin.right])
@@ -271,7 +233,7 @@ async function drawPlot ( state ) {
     .attr('transform', `translate(0,${height - margin.bottom})`)
 
   /* y is a function that maps values to y-coordinates on-screen */
-  const y = ((state.logplot) ? d3.scaleLog() : d3.scaleLinear())
+  const y = ((params.logplot) ? d3.scaleLog() : d3.scaleLinear())
     .domain([ymin, ymax])
     .range([height - margin.bottom, margin.top])
 
@@ -358,14 +320,15 @@ function drawLegend ( state ) {
     .text(c => c.country)
   item
     .on('click', function (c) {
+      const update = { }
       if (c.isSelected) {
-        state.countries = state.countries.filter(function (value, _) {
+        update.countries = state.countries.filter(function (value, _) {
           return value !== c.country
         })
       } else {
-        state.countries.push(c.country)
+        update.countries = state.countries.concat([c.country])
       }
-      onStateChange()
+      updateState(update)
     })
     .on('mouseover', function (c) {
       svg.selectAll('path')
@@ -400,8 +363,7 @@ function drawLegend ( state ) {
 
 /** The main function is called when the page has loaded */
 async function main () {
-  state = parseUrlArgs()
-
+  const state = getState()
   drawNav(state)
 
   d3.select('body').classed('loading', true)
@@ -411,6 +373,7 @@ async function main () {
   onStateChange()
 
   window.onresize = onStateChange
+  window.addEventListener( 'hashchange' , onStateChange )
 
   initSearch()
 }
@@ -427,16 +390,16 @@ function initSearch ( ) {
     const value = e.target.value
 
     if ( value === '*' ) {
+      const state = getState()
       const allCountriesSet = data.getCountries(state.dataset)
       const allCountriesOrdered = countries.getAll(state.countries, allCountriesSet)
-      state.countries = Array.from(allCountriesOrdered).map(c => c.country)
       e.target.value = ''
-      onStateChange()
+      const update = { countries: Array.from(allCountriesOrdered).map(c => c.country) }
+      updateState(update)
     }
     else if ( value === '0' ) {
-      state.countries = []
       e.target.value = ''
-      onStateChange()
+      updateState({ countries : [] })
     }
     else {
       const keys = [
@@ -449,15 +412,16 @@ function initSearch ( ) {
 
       for (const key of keys) {
         if (countries.getInfo(key) !== undefined) {
+          const update = {}
           if (state.countries.includes(key)) {
-            state.countries = state.countries.filter(
+            update.countries = state.countries.filter(
               (item) => item !== key
             )
           } else {
-            state.countries.push(key)
+            update.countries = state.countries.concat([key])
           }
           e.target.value = ''
-          onStateChange()
+          updateState(update)
           break
         }
       }
@@ -476,8 +440,11 @@ function initSearch ( ) {
 
 function toggle ( key ) {
   return () => {
-    state[key] = !state[key]
-    onStateChange()
+    const state = getState()
+    const update = { params : {} }
+    update.params[state.plot] = {}
+    update.params[state.plot][key] = !state.params[state.plot][key]
+    updateState(update)
   }
 }
 
@@ -485,27 +452,36 @@ const toggleCumulative = toggle('cumulative')
 const toggleLog = toggle('logplot')
 const toggleNormalize = toggle('normalize')
 const toggleAlign = toggle('align')
+const toggleSmooth = toggle('smooth')
 
 function cycle ( key, values, stepsize ) {
+  const state = getState()
   const oldIndex = values.indexOf(state[key])
   const newIndex = (oldIndex + stepsize + values.length) % values.length
-  state[key] = values[newIndex]
-  onStateChange()
+  const update = { }
+  update[key] = values[newIndex]
+  updateState(update)
 }
 
 const nextDataSet = () => cycle('dataset', data.availableDatasets(), +1)
 const prevDataSet = () => cycle('dataset', data.availableDatasets(), -1)
 
-const nextPlot = () => cyclePlots('plot', Object.keys(plots), +1)
-const prevPlot = () => cyclePlots('plot', Object.keys(plots), -1)
+const nextPlot = () => cycle('plot', Object.keys(plots), +1)
+const prevPlot = () => cycle('plot', Object.keys(plots), -1)
 
 const plot = {
   text: state => state.plot[0].toUpperCase(),
   tooltip: () => `Current plot. Available plots are: ${Object.keys(plots).join(', ')}.`,
-  backgroundColor: state => {
-    const keys = Object.keys(plots)
-    return color(keys.indexOf(state.plot), keys.length)
+  classList: {
+    list: true,
   },
+  style: {
+    backgroundColor: state => {
+      const values = Object.keys(plots)
+      return color(values.indexOf(state.plot), values.length)
+    },
+  },
+  onClick: nextPlot,
 }
 
 const help = {
@@ -514,7 +490,7 @@ const help = {
 }
 
 const plots = {
-  'time' : {
+  'calendar' : {
     nav: [
       plot,
       help,
@@ -522,7 +498,7 @@ const plots = {
         text: 'c',
         tooltip: 'Cumulative plot [c]',
         classList: {
-          toggled: state => state.cumulative,
+          toggled: state => state.params.calendar.cumulative,
         },
         onClick: toggleCumulative,
       },
@@ -530,8 +506,8 @@ const plots = {
         text: 'log',
         tooltip: 'Switch to log-plot [l]',
         classList: {
-          toggled: state => state.logplot,
-          disabled: state => !state.cumulative,
+          toggled: state => state.params.calendar.logplot,
+          disabled: state => !state.params.calendar.cumulative,
         },
         onClick: toggleLog,
       },
@@ -539,7 +515,7 @@ const plots = {
         text: 'n',
         tooltip: 'Normalize by population (default) [n]',
         classList: {
-          toggled: state => state.normalize,
+          toggled: state => state.params.calendar.normalize,
         },
         onClick: toggleNormalize,
       },
@@ -559,14 +535,22 @@ const plots = {
       },
       {
         text: 'a',
-        tooltip: state => state.normalize ?
+        tooltip: state => state.params.calendar.normalize ?
         `Align by first day with ${ALIGN_THRESHOLD_NORMALIZED} cases per 100,000 [a]` :
         `Align by first day with ${ALIGN_THRESHOLD} cases [a]` ,
         classList: {
-          toggled: state => state.align,
+          toggled: state => state.params.calendar.align,
         },
         onClick: toggleAlign,
-      }
+      },
+      {
+        text: 's',
+        tooltip: 'Take average of last three measurements [s]',
+        classList: {
+          toggled: state => state.params.calendar.smooth,
+        },
+        onClick: toggleSmooth,
+      },
     ] ,
     shortcuts: (event) => {
       if (!event.ctrlKey && !event.altKey) {
@@ -577,6 +561,54 @@ const plots = {
           case 'd': nextDataSet(); break
           case 'D': prevDataSet(); break
           case 'a': toggleAlign(); break
+          case 's': toggleSmooth(); break
+        }
+      }
+    },
+  },
+  'trajectory' : {
+    nav: [
+      plot,
+      help,
+      {
+        text: 'log',
+        tooltip: 'Switch to log-plot [l]',
+        classList: {
+          toggled: state => state.params.trajectory.logplot,
+        },
+        onClick: toggleLog,
+      },
+      {
+        text: 'd',
+        tooltip: 'Cycle through available datasets [d]',
+        style: {
+          backgroundColor: state => {
+            const datasets = data.availableDatasets()
+            return color(datasets.indexOf(state.dataset), datasets.length)
+          },
+        },
+        classList: {
+          list: true,
+        },
+        onClick: nextDataSet,
+      },
+      {
+        text: 's',
+        tooltip: 'Take average of last three measurements [s]',
+        classList: {
+          toggled: state => state.params.trajectory.smooth,
+        },
+        onClick: toggleSmooth,
+      },
+    ] ,
+    shortcuts: (event) => {
+      if (!event.ctrlKey && !event.altKey) {
+        switch (event.key) {
+          case 'l': toggleLog(); break
+          case 'n': toggleNormalize(); break
+          case 'd': nextDataSet(); break
+          case 'D': prevDataSet(); break
+          case 's': toggleSmooth(); break
         }
       }
     },
