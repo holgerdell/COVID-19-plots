@@ -95,7 +95,7 @@ export async function getValue (datestring, country, dataset) {
   */
 export function getTimeSeries (country, dataset) {
   if (timeSeriesData[dataset] === undefined || timeSeriesData[dataset][country] === undefined) {
-    return undefined
+    return []
   } else {
     const ts = timeSeriesData[dataset][country]
     const rows = Object.values(ts)
