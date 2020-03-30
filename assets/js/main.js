@@ -391,6 +391,8 @@ async function onStateChange () {
 async function main () {
   state = parseUrlArgs()
 
+  drawNav(state)
+
   await countries.load()
 
   onStateChange()
