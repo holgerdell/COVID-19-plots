@@ -22,10 +22,9 @@ const defaultState = {
       cumulative: true,
       normalize: true,
       logplot: true,
-      smooth: true,
+      smooth: false,
     },
     'trajectory': {
-      align: false,
       logplot: true,
       smooth: true,
     },
