@@ -486,17 +486,27 @@ const toggleLog = toggle('logplot')
 const toggleNormalize = toggle('normalize')
 const toggleAlign = toggle('align')
 
-function switchdatasets (stepsize) {
-  const ds = data.availableDatasets()
-  const oldIndex = ds.indexOf(state.dataset)
-  const newIndex = (oldIndex + stepsize + ds.length) % ds.length
-  state.dataset = ds[newIndex]
+function cycle ( key, values, stepsize ) {
+  const oldIndex = values.indexOf(state[key])
+  const newIndex = (oldIndex + stepsize + values.length) % values.length
+  state[key] = values[newIndex]
   onStateChange()
 }
 
-const nextDataSet = () => switchdatasets(+1)
-const prevDataSet = () => switchdatasets(-1)
+const nextDataSet = () => cycle('dataset', data.availableDatasets(), +1)
+const prevDataSet = () => cycle('dataset', data.availableDatasets(), -1)
 
+const nextPlot = () => cyclePlots('plot', Object.keys(plots), +1)
+const prevPlot = () => cyclePlots('plot', Object.keys(plots), -1)
+
+const plot = {
+  text: state => state.plot[0].toUpperCase(),
+  tooltip: () => `Current plot. Available plots are: ${Object.keys(plots).join(', ')}.`,
+  backgroundColor: state => {
+    const keys = Object.keys(plots)
+    return color(keys.indexOf(state.plot), keys.length)
+  },
+}
 
 const help = {
   text: '?',
@@ -506,32 +516,44 @@ const help = {
 const plots = {
   'time' : {
     nav: [
+      plot,
       help,
       {
         text: 'c',
         tooltip: 'Cumulative plot [c]',
-        toggled: state => state.cumulative,
+        classList: {
+          toggled: state => state.cumulative,
+        },
         onClick: toggleCumulative,
       },
       {
         text: 'log',
         tooltip: 'Switch to log-plot [l]',
-        toggled: state => state.logplot,
-        disabled: state => !state.cumulative,
+        classList: {
+          toggled: state => state.logplot,
+          disabled: state => !state.cumulative,
+        },
         onClick: toggleLog,
       },
       {
         text: 'n',
         tooltip: 'Normalize by population (default) [n]',
-        toggled: state => state.normalize,
+        classList: {
+          toggled: state => state.normalize,
+        },
         onClick: toggleNormalize,
       },
       {
         text: 'd',
         tooltip: 'Cycle through available datasets [d]',
-        backgroundColor: state => {
-          const datasets = data.availableDatasets()
-          return color(datasets.indexOf(state.dataset), datasets.length)
+        style: {
+          backgroundColor: state => {
+            const datasets = data.availableDatasets()
+            return color(datasets.indexOf(state.dataset), datasets.length)
+          },
+        },
+        classList: {
+          list: true,
         },
         onClick: nextDataSet,
       },
@@ -540,7 +562,9 @@ const plots = {
         tooltip: state => state.normalize ?
         `Align by first day with ${ALIGN_THRESHOLD_NORMALIZED} cases per 100,000 [a]` :
         `Align by first day with ${ALIGN_THRESHOLD} cases [a]` ,
-        toggled: state => state.align,
+        classList: {
+          toggled: state => state.align,
+        },
         onClick: toggleAlign,
       }
     ] ,
@@ -583,17 +607,16 @@ function drawNav ( state ) {
       tooltip.innerHTML = fromConstantOrCallable(item.tooltip, state)
       button.appendChild(tooltip)
     }
-    if ( fromConstantOrCallable(item.toggled, state) ) {
-      button.classList.add('toggled')
+    for ( const [className, test] of Object.entries(item.classList || {})) {
+      if ( fromConstantOrCallable(test, state) ) {
+        button.classList.add(className)
+      }
     }
-    if ( fromConstantOrCallable(item.disabled, state) ) {
-      button.classList.add('disabled')
+    for ( const [key, value] of Object.entries(item.style || {})) {
+      button.style[key] = fromConstantOrCallable(value, state)
     }
-    else if ( item.onClick ) {
+    if ( item.onClick && !(item.classList && fromConstantOrCallable(item.disabled, state)) ) {
       button.addEventListener('click', item.onClick)
-    }
-    if ( item.backgroundColor ) {
-      button.style.backgroundColor = fromConstantOrCallable(item.backgroundColor, state)
     }
     nav.appendChild(button)
   }
