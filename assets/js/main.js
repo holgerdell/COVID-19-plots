@@ -440,26 +440,41 @@ async function main () {
 
   const oninput = (e) => {
     const value = e.target.value
-    const keys = [
-      value,
-      string.titlecase(value.toLowerCase()),
-      string.capitalize(value.toLowerCase()),
-      string.capitalizeFirstLetter(value.toLowerCase()),
-      countriesCodeMap.get(value)
-    ]
 
-    for (const key of keys) {
-      if (countries.getInfo(key) !== undefined) {
-        if (state.countries.includes(key)) {
-          state.countries = state.countries.filter(
-            (item) => item !== key
-          )
-        } else {
-          state.countries.push(key)
+    if ( value === '*' ) {
+      const allCountriesSet = data.getCountries(state.dataset)
+      const allCountriesOrdered = countries.getAll(state.countries, allCountriesSet)
+      state.countries = Array.from(allCountriesOrdered).map(c => c.country)
+      e.target.value = ''
+      onStateChange()
+    }
+    else if ( value === '0' ) {
+      state.countries = []
+      e.target.value = ''
+      onStateChange()
+    }
+    else {
+      const keys = [
+        value,
+        string.titlecase(value.toLowerCase()),
+        string.capitalize(value.toLowerCase()),
+        string.capitalizeFirstLetter(value.toLowerCase()),
+        countriesCodeMap.get(value)
+      ]
+
+      for (const key of keys) {
+        if (countries.getInfo(key) !== undefined) {
+          if (state.countries.includes(key)) {
+            state.countries = state.countries.filter(
+              (item) => item !== key
+            )
+          } else {
+            state.countries.push(key)
+          }
+          e.target.value = ''
+          onStateChange()
+          break
         }
-        e.target.value = ''
-        onStateChange()
-        break
       }
     }
   }
