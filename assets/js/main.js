@@ -17,18 +17,18 @@ const defaultState = {
   dataset: data.defaultDataset,
   countries: defaultCountries,
   params: {
-    'calendar': {
+    calendar: {
       align: false,
       cumulative: true,
       normalize: true,
       logplot: true,
-      smooth: false,
+      smooth: false
     },
-    'trajectory': {
+    trajectory: {
       logplot: true,
-      smooth: true,
-    },
-  },
+      smooth: true
+    }
+  }
 }
 
 const getState = () => {
@@ -41,7 +41,7 @@ const updateState = (update) => hash.update(update)
 /* Search configuration */
 const DELAY_DEBOUNCE_SEARCH = 200
 
-/* Time constants*/
+/* Time constants */
 const MILLISECONDS_IN_A_DAY = 1000 * 60 * 60 * 24
 
 /* Style configuration */
@@ -73,7 +73,6 @@ function color (obj, numObjects) {
   if (fraction <= 1) return d3.color(d3.interpolateWarm(fraction)).darker(0.2)
   else return d3.color(d3.interpolateCool(2 - fraction)).darker(0.2)
 }
-
 
 /** Get a nice label for the y-axis
   * @param {Dictionary} state is the current state
@@ -110,9 +109,8 @@ async function onStateChange () {
 
   const logplot = state.params.calendar.logplot && state.params.calendar.cumulative // cannot be both logplot and non-cumulative ?
   if (state.plot === 'calendar' && logplot !== state.params.calendar.logplot) {
-    updateState({ params : { calendar : { logplot } } })
-  }
-  else {
+    updateState({ params: { calendar: { logplot } } })
+  } else {
     d3.select('#tooltip').style('visibility', 'hidden')
     drawNav(state)
     await drawPlot(state) // timeSeriesData is loaded here
@@ -120,8 +118,7 @@ async function onStateChange () {
   }
 }
 
-async function drawPlot ( state ) {
-
+async function drawPlot (state) {
   const tooltip = d3.select('#tooltip')
   const params = state.params[state.plot]
 
@@ -151,8 +148,8 @@ async function drawPlot ( state ) {
     let previousValue = 0
     /* Massage the data for this country */
     let countryData = data.getTimeSeries(c, state.dataset)
-    const smoothness = 3; // number of days to average on
-    const buffer = [];
+    const smoothness = 3 // number of days to average on
+    const buffer = []
     for (let i = 0; i < smoothness; ++i) {
       buffer.push(0)
     }
@@ -160,9 +157,9 @@ async function drawPlot ( state ) {
       d.countryIndex = i
       let cumulative = (params.normalize) ? d.normalized_value : d.value
       if (params.smooth) {
-        buffer.splice(0,1)
+        buffer.splice(0, 1)
         buffer.push(cumulative)
-        cumulative = buffer.reduce((x,y) => x+y) / buffer.length
+        cumulative = buffer.reduce((x, y) => x + y) / buffer.length
       }
       if (!isNaN(cumulative) && cumulative !== undefined && cumulative > 0) {
         d.y = cumulative
@@ -173,8 +170,7 @@ async function drawPlot ( state ) {
         }
         if (state.plot === 'trajectory') {
           d.x = cumulative
-        }
-        else if (!params.align) {
+        } else if (!params.align) {
           d.x = d.date
         } else {
           const threshold = (params.normalize) ? ALIGN_THRESHOLD_NORMALIZED : ALIGN_THRESHOLD
@@ -215,8 +211,7 @@ async function drawPlot ( state ) {
     x = ((params.logplot) ? d3.scaleLog() : d3.scaleLinear())
       .domain([xmin, xmax])
       .range([margin.left, width - margin.right])
-  }
-  else if (params.align) {
+  } else if (params.align) {
     x = d3.scaleLinear()
       .domain([xmin, xmax]).nice()
       .range([margin.left, width - margin.right])
@@ -284,11 +279,9 @@ async function drawPlot ( state ) {
         return tooltip.style('visibility', 'hidden')
       })
   })
-
 }
 
-function drawLegend ( state ) {
-
+function drawLegend (state) {
   const legend = d3.select('#legend > .choices')
   const tooltip = d3.select('#tooltip')
   const svg = d3.select('main > svg')
@@ -372,12 +365,12 @@ async function main () {
   onStateChange()
 
   window.onresize = onStateChange
-  window.addEventListener( 'hashchange' , onStateChange )
+  window.addEventListener('hashchange', onStateChange)
 
   initSearch()
 }
 
-function initSearch ( ) {
+function initSearch () {
   const countriesCodeMap = new Map()
 
   countries.forEach(function (c) {
@@ -388,19 +381,17 @@ function initSearch ( ) {
   const oninput = (e) => {
     const value = e.target.value
 
-    if ( value === '*' ) {
+    if (value === '*') {
       const state = getState()
       const allCountriesSet = data.getCountries(state.dataset)
       const allCountriesOrdered = countries.getAll(state.countries, allCountriesSet)
       e.target.value = ''
       const update = { countries: Array.from(allCountriesOrdered).map(c => c.country) }
       updateState(update)
-    }
-    else if ( value === '0' ) {
+    } else if (value === '0') {
       e.target.value = ''
-      updateState({ countries : [] })
-    }
-    else {
+      updateState({ countries: [] })
+    } else {
       const state = getState()
       const keys = [
         value,
@@ -438,10 +429,10 @@ function initSearch ( ) {
     .addEventListener('keydown', (e) => e.stopPropagation())
 }
 
-function toggle ( key ) {
+function toggle (key) {
   return () => {
     const state = getState()
-    const update = { params : {} }
+    const update = { params: {} }
     update.params[state.plot] = {}
     update.params[state.plot][key] = !state.params[state.plot][key]
     updateState(update)
@@ -454,7 +445,7 @@ const toggleNormalize = toggle('normalize')
 const toggleAlign = toggle('align')
 const toggleSmooth = toggle('smooth')
 
-function cycle ( key, values, stepsize ) {
+function cycle (key, values, stepsize) {
   const state = getState()
   const oldIndex = values.indexOf(state[key])
   const newIndex = (oldIndex + stepsize + values.length) % values.length
@@ -473,24 +464,24 @@ const plot = {
   text: state => state.plot[0].toUpperCase(),
   tooltip: () => `Current plot. Available plots are: ${Object.keys(plots).join(', ')}.`,
   classList: {
-    list: true,
+    list: true
   },
   style: {
     backgroundColor: state => {
       const values = Object.keys(plots)
       return color(values.indexOf(state.plot), values.length)
-    },
+    }
   },
-  onClick: nextPlot,
+  onClick: nextPlot
 }
 
 const help = {
   text: '?',
-  tooltip: 'You can use URL parameters, for example: <span class="url">index.html?normalize=true&amp;logplot=true&amp;countries=China;Italy;South%20Korea</span>',
+  tooltip: 'You can use URL parameters, for example: <span class="url">index.html?normalize=true&amp;logplot=true&amp;countries=China;Italy;South%20Korea</span>'
 }
 
 const plots = {
-  'calendar' : {
+  calendar: {
     nav: [
       plot,
       help,
@@ -498,26 +489,26 @@ const plots = {
         text: 'c',
         tooltip: 'Cumulative plot [c]',
         classList: {
-          toggled: state => state.params.calendar.cumulative,
+          toggled: state => state.params.calendar.cumulative
         },
-        onClick: toggleCumulative,
+        onClick: toggleCumulative
       },
       {
         text: 'log',
         tooltip: 'Switch to log-plot [l]',
         classList: {
           toggled: state => state.params.calendar.logplot,
-          disabled: state => !state.params.calendar.cumulative,
+          disabled: state => !state.params.calendar.cumulative
         },
-        onClick: toggleLog,
+        onClick: toggleLog
       },
       {
         text: 'n',
         tooltip: 'Normalize by population (default) [n]',
         classList: {
-          toggled: state => state.params.calendar.normalize,
+          toggled: state => state.params.calendar.normalize
         },
-        onClick: toggleNormalize,
+        onClick: toggleNormalize
       },
       {
         text: 'd',
@@ -526,35 +517,37 @@ const plots = {
           backgroundColor: state => {
             const datasets = data.availableDatasets()
             return color(datasets.indexOf(state.dataset), datasets.length)
-          },
+          }
         },
         classList: {
-          list: true,
+          list: true
         },
-        onClick: nextDataSet,
+        onClick: nextDataSet
       },
       {
         text: 'a',
-        tooltip: state => state.params.calendar.normalize ?
-        `Align by first day with ${ALIGN_THRESHOLD_NORMALIZED} cases per 100,000 [a]` :
-        `Align by first day with ${ALIGN_THRESHOLD} cases [a]` ,
+        tooltip: state => state.params.calendar.normalize
+          ? `Align by first day with ${ALIGN_THRESHOLD_NORMALIZED} cases per 100,000 [a]`
+          : `Align by first day with ${ALIGN_THRESHOLD} cases [a]`,
         classList: {
-          toggled: state => state.params.calendar.align,
+          toggled: state => state.params.calendar.align
         },
-        onClick: toggleAlign,
+        onClick: toggleAlign
       },
       {
         text: 's',
         tooltip: 'Take average of last three measurements [s]',
         classList: {
-          toggled: state => state.params.calendar.smooth,
+          toggled: state => state.params.calendar.smooth
         },
-        onClick: toggleSmooth,
-      },
-    ] ,
+        onClick: toggleSmooth
+      }
+    ],
     shortcuts: (event) => {
       if (!event.ctrlKey && !event.altKey) {
         switch (event.key) {
+          case 'p': nextPlot(); break
+          case 'P': prevPlot(); break
           case 'c': toggleCumulative(); break
           case 'l': toggleLog(); break
           case 'n': toggleNormalize(); break
@@ -564,9 +557,9 @@ const plots = {
           case 's': toggleSmooth(); break
         }
       }
-    },
+    }
   },
-  'trajectory' : {
+  trajectory: {
     nav: [
       plot,
       help,
@@ -574,9 +567,9 @@ const plots = {
         text: 'log',
         tooltip: 'Switch to log-plot [l]',
         classList: {
-          toggled: state => state.params.trajectory.logplot,
+          toggled: state => state.params.trajectory.logplot
         },
-        onClick: toggleLog,
+        onClick: toggleLog
       },
       {
         text: 'd',
@@ -585,25 +578,27 @@ const plots = {
           backgroundColor: state => {
             const datasets = data.availableDatasets()
             return color(datasets.indexOf(state.dataset), datasets.length)
-          },
+          }
         },
         classList: {
-          list: true,
+          list: true
         },
-        onClick: nextDataSet,
+        onClick: nextDataSet
       },
       {
         text: 's',
         tooltip: 'Take average of last three measurements [s]',
         classList: {
-          toggled: state => state.params.trajectory.smooth,
+          toggled: state => state.params.trajectory.smooth
         },
-        onClick: toggleSmooth,
-      },
-    ] ,
+        onClick: toggleSmooth
+      }
+    ],
     shortcuts: (event) => {
       if (!event.ctrlKey && !event.altKey) {
         switch (event.key) {
+          case 'p': nextPlot(); break
+          case 'P': prevPlot(); break
           case 'l': toggleLog(); break
           case 'n': toggleNormalize(); break
           case 'd': nextDataSet(); break
@@ -611,18 +606,17 @@ const plots = {
           case 's': toggleSmooth(); break
         }
       }
-    },
+    }
   }
 }
 
-function fromConstantOrCallable ( x , state ) {
+function fromConstantOrCallable (x, state) {
   return (x instanceof Function) ? x(state) : x
 }
 
 let currentShortcuts
 
-function drawNav ( state ) {
-
+function drawNav (state) {
   const plot = plots[state.plot]
 
   const nav = document.getElementById('nav')
@@ -630,33 +624,32 @@ function drawNav ( state ) {
     nav.removeChild(nav.lastChild)
   }
 
-  for ( const item of plot.nav ) {
+  for (const item of plot.nav) {
     const button = document.createElement('div')
     const text = document.createTextNode(fromConstantOrCallable(item.text, state))
     button.appendChild(text)
-    if ( item.tooltip ) {
+    if (item.tooltip) {
       const tooltip = document.createElement('div')
       tooltip.innerHTML = fromConstantOrCallable(item.tooltip, state)
       button.appendChild(tooltip)
     }
-    for ( const [className, test] of Object.entries(item.classList || {})) {
-      if ( fromConstantOrCallable(test, state) ) {
+    for (const [className, test] of Object.entries(item.classList || {})) {
+      if (fromConstantOrCallable(test, state)) {
         button.classList.add(className)
       }
     }
-    for ( const [key, value] of Object.entries(item.style || {})) {
+    for (const [key, value] of Object.entries(item.style || {})) {
       button.style[key] = fromConstantOrCallable(value, state)
     }
-    if ( item.onClick && !(item.classList && fromConstantOrCallable(item.disabled, state)) ) {
+    if (item.onClick && !(item.classList && fromConstantOrCallable(item.disabled, state))) {
       button.addEventListener('click', item.onClick)
     }
     nav.appendChild(button)
   }
 
-  document.removeEventListener('keydown', currentShortcuts);
+  document.removeEventListener('keydown', currentShortcuts)
   currentShortcuts = plot.shortcuts
-  document.addEventListener('keydown', currentShortcuts);
-
+  document.addEventListener('keydown', currentShortcuts)
 }
 
 window.onload = main
