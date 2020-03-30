@@ -5,15 +5,13 @@ import * as functools from './lib/functools.js'
 import * as data from './data.js'
 import * as countries from './countries.js'
 
-const DELAY_DEBOUNCE_SEARCH = 200
-const MILLISECONDS_IN_A_DAY = 1000 * 60 * 60 * 24
-
 /* We insist that the entire program's model state is stored in this dict. */
 let state = {}
 
 /* This dictionary holds the default values for the state
  * new toggles and options can simply be added here */
 const defaultState = {
+  plot: 'time',
   align: false,
   cumulative: true,
   normalize: true,
@@ -24,6 +22,12 @@ const defaultState = {
     'China', 'Italy', 'Denmark', 'Germany', 'Sweden', 'Greece', 'France'
   ]
 }
+
+/* Search configuration */
+const DELAY_DEBOUNCE_SEARCH = 200
+
+/* Time constants*/
+const MILLISECONDS_IN_A_DAY = 1000 * 60 * 60 * 24
 
 /* Style configuration */
 const PLOT_CIRCLE_RADIUS = 3
@@ -165,6 +169,8 @@ function ylabel (state) {
 async function onStateChange () {
   console.debug('Using dataset', state.dataset)
 
+  d3.select('body').classed('loading', false)
+
   state.logplot = state.logplot && state.cumulative
 
   setDisplayedUrlQuerystring(makeUrlQuerystring(state))
@@ -172,26 +178,7 @@ async function onStateChange () {
   const tooltip = d3.select('#tooltip')
   tooltip.style('visibility', 'hidden')
 
-  d3.select('body').classed('loading', false)
-  d3.select('#cumulative').classed('toggled', state.cumulative)
-  d3.select('#log').classed('toggled', state.logplot)
-  d3.select('#log').classed('disabled', !state.cumulative)
-  document.getElementById('log').removeEventListener('click', toggleLog)
-  if (state.cumulative) {
-    document.getElementById('log').addEventListener('click', toggleLog)
-  }
-  d3.select('#normalize').classed('toggled', state.normalize)
-  d3.select('#align').classed('toggled', state.align)
-
-  if (state.normalize) {
-    d3.select('#align > div').text(`Align by first day with ${ALIGN_THRESHOLD_NORMALIZED} cases per 100,000 [a]`)
-  } else {
-    d3.select('#align > div').text(`Align by first day with ${ALIGN_THRESHOLD} cases [a]`)
-  }
-
-  const datasets = data.availableDatasets()
-  const datasetButtonColor = color(datasets.indexOf(state.dataset), datasets.length)
-  d3.select('#datasets').style('background-color', datasetButtonColor)
+  drawNav(state)
 
   const width = document.getElementById('main').offsetWidth
   const height = document.getElementById('main').offsetHeight
@@ -408,25 +395,6 @@ async function main () {
 
   onStateChange()
 
-  /* Hook up event listeners to change the model state */
-  d3.select('#cumulative').on('click', toggleCumulative)
-  d3.select('#normalize').on('click', toggleNormalize)
-  d3.select('#align').on('click', toggleAlign)
-  d3.select('#datasets').on('click', nextDataSet)
-
-  document.addEventListener('keydown', (event) => {
-    if (!event.ctrlKey && !event.altKey) {
-      switch (event.key) {
-        case 'c': toggleCumulative(); break
-        case 'l': toggleLog(); break
-        case 'n': toggleNormalize(); break
-        case 'd': nextDataSet(); break
-        case 'D': prevDataSet(); break
-        case 'a': toggleAlign(); break
-      }
-    }
-  })
-
   window.onresize = onStateChange
 
   // Search feature
@@ -489,25 +457,17 @@ async function main () {
     .addEventListener('keydown', (e) => e.stopPropagation())
 }
 
-function toggleCumulative () {
-  state.cumulative = !state.cumulative
-  onStateChange()
+function toggle ( key ) {
+  return () => {
+    state[key] = !state[key]
+    onStateChange()
+  }
 }
 
-function toggleLog () {
-  state.logplot = !state.logplot
-  onStateChange()
-}
-
-function toggleNormalize () {
-  state.normalize = !state.normalize
-  onStateChange()
-}
-
-function toggleAlign () {
-  state.align = !state.align
-  onStateChange()
-}
+const toggleCumulative = toggle('cumulative')
+const toggleLog = toggle('logplot')
+const toggleNormalize = toggle('normalize')
+const toggleAlign = toggle('align')
 
 function switchdatasets (stepsize) {
   const ds = data.availableDatasets()
@@ -519,5 +479,112 @@ function switchdatasets (stepsize) {
 
 const nextDataSet = () => switchdatasets(+1)
 const prevDataSet = () => switchdatasets(-1)
+
+
+const help = {
+  text: '?',
+  tooltip: 'You can use URL parameters, for example: <span class="url">index.html?normalize=true&amp;logplot=true&amp;countries=China;Italy;South%20Korea</span>',
+}
+
+const plots = {
+  'time' : {
+    nav: [
+      help,
+      {
+        text: 'c',
+        tooltip: 'Cumulative plot [c]',
+        toggled: state => state.cumulative,
+        onClick: toggleCumulative,
+      },
+      {
+        text: 'log',
+        tooltip: 'Switch to log-plot [l]',
+        toggled: state => state.logplot,
+        disabled: state => !state.cumulative,
+        onClick: toggleLog,
+      },
+      {
+        text: 'n',
+        tooltip: 'Normalize by population (default) [n]',
+        toggled: state => state.normalize,
+        onClick: toggleNormalize,
+      },
+      {
+        text: 'd',
+        tooltip: 'Cycle through available datasets [d]',
+        backgroundColor: state => {
+          const datasets = data.availableDatasets()
+          return color(datasets.indexOf(state.dataset), datasets.length)
+        },
+        onClick: nextDataSet,
+      },
+      {
+        text: 'a',
+        tooltip: state => state.normalize ?
+        `Align by first day with ${ALIGN_THRESHOLD_NORMALIZED} cases per 100,000 [a]` :
+        `Align by first day with ${ALIGN_THRESHOLD} cases [a]` ,
+        toggled: state => state.align,
+        onClick: toggleAlign,
+      }
+    ] ,
+    shortcuts: (event) => {
+      if (!event.ctrlKey && !event.altKey) {
+        switch (event.key) {
+          case 'c': toggleCumulative(); break
+          case 'l': toggleLog(); break
+          case 'n': toggleNormalize(); break
+          case 'd': nextDataSet(); break
+          case 'D': prevDataSet(); break
+          case 'a': toggleAlign(); break
+        }
+      }
+    },
+  }
+}
+
+function fromConstantOrCallable ( x , state ) {
+  return (x instanceof Function) ? x(state) : x
+}
+
+let currentShortcuts
+
+function drawNav ( state ) {
+
+  const plot = plots[state.plot]
+
+  const nav = document.getElementById('nav')
+  while (nav.firstChild) {
+    nav.removeChild(nav.lastChild)
+  }
+
+  for ( const item of plot.nav ) {
+    const button = document.createElement('div')
+    const text = document.createTextNode(fromConstantOrCallable(item.text, state))
+    button.appendChild(text)
+    if ( item.tooltip ) {
+      const tooltip = document.createElement('div')
+      tooltip.innerHTML = fromConstantOrCallable(item.tooltip, state)
+      button.appendChild(tooltip)
+    }
+    if ( fromConstantOrCallable(item.toggled, state) ) {
+      button.classList.add('toggled')
+    }
+    if ( fromConstantOrCallable(item.disabled, state) ) {
+      button.classList.add('disabled')
+    }
+    else if ( item.onClick ) {
+      button.addEventListener('click', item.onClick)
+    }
+    if ( item.backgroundColor ) {
+      button.style.backgroundColor = fromConstantOrCallable(item.backgroundColor, state)
+    }
+    nav.appendChild(button)
+  }
+
+  document.removeEventListener('keydown', currentShortcuts);
+  currentShortcuts = plot.shortcuts
+  document.addEventListener('keydown', currentShortcuts);
+
+}
 
 window.onload = main
