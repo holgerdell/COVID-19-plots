@@ -412,8 +412,10 @@ async function main () {
 
   window.onresize = onStateChange
 
-  // Search feature
+  initSearch()
+}
 
+function initSearch ( ) {
   const countriesCodeMap = new Map()
 
   countries.forEach(function (c) {
