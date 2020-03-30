@@ -169,16 +169,19 @@ function ylabel (state) {
 async function onStateChange () {
   console.debug('Using dataset', state.dataset)
 
-  d3.select('body').classed('loading', false)
-
-  state.logplot = state.logplot && state.cumulative
+  state.logplot = state.logplot && state.cumulative // cannot be both logplot and cumulative ?
 
   setDisplayedUrlQuerystring(makeUrlQuerystring(state))
 
-  const tooltip = d3.select('#tooltip')
-  tooltip.style('visibility', 'hidden')
-
+  d3.select('#tooltip').style('visibility', 'hidden')
   drawNav(state)
+  await drawPlot(state) // timeSeriesData is loaded here
+  drawLegend(state) // requires timeSeriesData to be loaded
+}
+
+async function drawPlot ( state ) {
+
+  const tooltip = d3.select('#tooltip')
 
   const width = document.getElementById('main').offsetWidth
   const height = document.getElementById('main').offsetHeight
@@ -196,7 +199,9 @@ async function onStateChange () {
     }
   }
 
+  d3.select('body').classed('loading', true)
   await data.fetchTimeSeriesData(state.dataset)
+  d3.select('body').classed('loading', false)
 
   const massaged = []
   state.countries.forEach(function (c, i) {
@@ -319,7 +324,13 @@ async function onStateChange () {
       })
   })
 
+}
+
+function drawLegend ( state ) {
+
   const legend = d3.select('#legend > .choices')
+  const tooltip = d3.select('#tooltip')
+  const svg = d3.select('main > svg')
 
   /* collect country data */
   let allCountries = countries.getAll(state.countries, data.getCountries(state.dataset))
@@ -393,7 +404,9 @@ async function main () {
 
   drawNav(state)
 
+  d3.select('body').classed('loading', true)
   await countries.load()
+  d3.select('body').classed('loading', false)
 
   onStateChange()
 
