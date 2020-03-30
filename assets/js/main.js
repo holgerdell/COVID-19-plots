@@ -402,6 +402,7 @@ function initSearch ( ) {
       updateState({ countries : [] })
     }
     else {
+      const state = getState()
       const keys = [
         value,
         string.titlecase(value.toLowerCase()),
