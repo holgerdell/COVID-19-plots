@@ -127,7 +127,6 @@ async function drawPlot (state) {
   const margin = ({ top: 20, right: 20, bottom: 60, left: 50 })
 
   const svg = d3.select('main > svg')
-  svg.html(null) // delete all children
 
   /* Check if all countries in the state are present in the data */
   for (const c of state.countries) {
@@ -142,7 +141,7 @@ async function drawPlot (state) {
   await data.fetchTimeSeriesData(state.dataset)
   d3.select('body').classed('loading', false)
 
-  const massaged = []
+  const countryCurves = []
   state.countries.forEach(function (c, i) {
     let firstDateAboveThreshold
     let previousValue = 0
@@ -186,14 +185,14 @@ async function drawPlot (state) {
       }
     }
     countryData = countryData.filter((d) => d.x !== undefined)
-    massaged.push(countryData)
+    countryCurves.push(countryData)
   })
 
   let xmax = -Infinity
   let xmin = Infinity
   let ymax = -Infinity
   let ymin = Infinity
-  massaged.forEach((countryData) => {
+  countryCurves.forEach((countryData) => {
     for (const d of countryData) {
       if (d.x > xmax) xmax = d.x
       if (d.x < xmin) xmin = d.x
@@ -222,7 +221,9 @@ async function drawPlot (state) {
   }
 
   /* draw the x-axis */
+  svg.selectAll('.xaxis').remove()
   svg.append('g')
+    .classed('xaxis', true)
     .call(d3.axisBottom(x))
     .attr('transform', `translate(0,${height - margin.bottom})`)
 
@@ -232,7 +233,9 @@ async function drawPlot (state) {
     .range([height - margin.bottom, margin.top])
 
   /* draw the y-axis */
+  svg.selectAll('.yaxis').remove()
   svg.append('g')
+    .classed('yaxis', true)
     .call(d3.axisLeft(y))
     .attr('transform', `translate(${margin.left},0)`)
     .call((g) => g.select('.domain').remove())
@@ -242,43 +245,59 @@ async function drawPlot (state) {
       .attr('font-weight', 'bold')
       .text(ylabel(state)))
 
-  massaged.forEach((countryData, i) => {
-    /* draw the plot for each country */
+  /// svg.selectAll('g.curves').data(massaged, c => c[0].country)
 
-    const line = d3.line()
-      .curve(d3.curveMonotoneX)
-      .x((d) => x(d.x))
-      .y((d) => y(d.y))
+  const countryPoints = []
+  countryCurves.forEach((countryCurve, i) =>
+    countryCurve.forEach((point, _) =>
+      countryPoints.push(point)
+    )
+  )
+  const circles = svg.selectAll('circle')
+    .data(countryPoints)
+  circles.exit().remove()
+  circles.enter()
+    .append('circle')
+    .style('fill', e => color(e.countryIndex, state.countries.length))
+    .attr('cx', (d) => x(d.x))
+    .attr('cy', (d) => y(d.y))
+    .attr('r', PLOT_CIRCLE_RADIUS)
+    .on('mouseover', function (d, _) {
+      d3.select(this).attr('r', 2 * PLOT_LINE_STROKE_WIDTH)
+      tooltip.html(d.country +
+        '<br />Value: ' + d.value.toLocaleString() +
+        '<br />Date: ' + d3.timeFormat('%Y-%m-%d')(d.date))
+      return tooltip.style('visibility', 'visible')
+    })
+    .on('mousemove', () => tooltip
+      .style('top', (d3.event.pageY - 15) + 'px')
+      .style('right', (document.body.offsetWidth - d3.event.pageX + 20) + 'px'))
+    .on('mouseout', function (d, i) {
+      d3.select(this).transition().attr('r', PLOT_CIRCLE_RADIUS)
+      return tooltip.style('visibility', 'hidden')
+    })
+  circles
+    .transition()
+    .duration(500)
+    .attr('cx', (d) => x(d.x))
+    .attr('cy', (d) => y(d.y))
 
-    svg.append('path')
-      .datum(countryData)
-      .style('fill', 'none')
-      .style('stroke', color(i, state.countries.length))
-      .attr('stroke-width', PLOT_LINE_STROKE_WIDTH)
-      .attr('d', line)
-    svg.selectAll()
-      .data(countryData)
-      .enter()
-      .append('circle')
-      .style('fill', color(i, state.countries.length))
-      .attr('r', PLOT_CIRCLE_RADIUS)
-      .attr('cx', (d) => x(d.x))
-      .attr('cy', (d) => y(d.y))
-      .on('mouseover', function (d, i) {
-        d3.select(this).attr('r', 2 * PLOT_LINE_STROKE_WIDTH)
-        tooltip.html(d.country +
-          '<br />Value: ' + d.value.toLocaleString() +
-          '<br />Date: ' + d3.timeFormat('%Y-%m-%d')(d.date))
-        return tooltip.style('visibility', 'visible')
-      })
-      .on('mousemove', () => tooltip
-        .style('top', (d3.event.pageY - 15) + 'px')
-        .style('right', (document.body.offsetWidth - d3.event.pageX + 20) + 'px'))
-      .on('mouseout', function (d, i) {
-        d3.select(this).transition().attr('r', PLOT_CIRCLE_RADIUS)
-        return tooltip.style('visibility', 'hidden')
-      })
-  })
+  const line = d3.line()
+    .curve(d3.curveMonotoneX)
+    .x((d) => x(d.x))
+    .y((d) => y(d.y))
+
+  const curves = svg.selectAll('path.curve').data(countryCurves)
+  curves.exit().remove()
+  curves.enter().append('path').classed('curve', true)
+    .style('fill', 'none')
+    .style('stroke', curve => color(curve[0].countryIndex, state.countries.length))
+    .attr('stroke-width', PLOT_LINE_STROKE_WIDTH)
+    .attr('d', line)
+  curves
+    .transition()
+    .duration(500)
+    .attr('d', line)
 }
 
 function drawLegend (state) {
