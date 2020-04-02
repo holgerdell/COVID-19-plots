@@ -146,13 +146,13 @@ async function drawPlot (state) {
     let firstDateAboveThreshold
     let previousValue = 0
     /* Massage the data for this country */
-    let countryData = data.getTimeSeries(c, state.dataset)
+    let countryCurve = data.getTimeSeries(c, state.dataset)
     const smoothness = 3 // number of days to average on
     const buffer = []
-    for (let i = 0; i < smoothness; ++i) {
+    for (let j = 0; j < smoothness; ++j) {
       buffer.push(0)
     }
-    for (const d of countryData) {
+    for (const d of countryCurve) {
       d.countryIndex = i
       let cumulative = (params.normalize) ? d.normalized_value : d.value
       if (params.smooth) {
@@ -184,16 +184,16 @@ async function drawPlot (state) {
         }
       }
     }
-    countryData = countryData.filter((d) => d.x !== undefined)
-    countryCurves.push(countryData)
+    countryCurve = countryCurve.filter((d) => d.x !== undefined)
+    countryCurves.push(countryCurve)
   })
 
   let xmax = -Infinity
   let xmin = Infinity
   let ymax = -Infinity
   let ymin = Infinity
-  countryCurves.forEach((countryData) => {
-    for (const d of countryData) {
+  countryCurves.forEach((countryCurve) => {
+    for (const d of countryCurve) {
       if (d.x > xmax) xmax = d.x
       if (d.x < xmin) xmin = d.x
       if (d.y > ymax) ymax = d.y
@@ -249,16 +249,16 @@ async function drawPlot (state) {
 
   const countryPoints = []
   countryCurves.forEach((countryCurve, i) =>
-    countryCurve.forEach((point, _) =>
+    countryCurve.forEach((point, _) => {
       countryPoints.push(point)
-    )
+    })
   )
-  const circles = svg.selectAll('circle')
-    .data(countryPoints)
+  const circles = svg.selectAll('circle.countrypoints')
+    .data(countryPoints, function (d) { return d ? d.datestring + d.country : this.id })
   circles.exit().remove()
   circles.enter()
-    .append('circle')
-    .style('fill', e => color(e.countryIndex, state.countries.length))
+    .append('circle').classed('countrypoints', true)
+    .style('fill', d => color(d.countryIndex, state.countries.length))
     .attr('cx', (d) => x(d.x))
     .attr('cy', (d) => y(d.y))
     .attr('r', PLOT_CIRCLE_RADIUS)
@@ -277,6 +277,7 @@ async function drawPlot (state) {
       return tooltip.style('visibility', 'hidden')
     })
   circles
+    .style('fill', d => color(d.countryIndex, state.countries.length))
     .transition()
     .duration(500)
     .attr('cx', (d) => x(d.x))
@@ -287,14 +288,15 @@ async function drawPlot (state) {
     .x((d) => x(d.x))
     .y((d) => y(d.y))
 
-  const curves = svg.selectAll('path.curve').data(countryCurves)
+  const curves = svg.selectAll('path.curve').data(countryCurves, c => c[0].country || c)
   curves.exit().remove()
   curves.enter().append('path').classed('curve', true)
-    .style('fill', 'none')
     .style('stroke', curve => color(curve[0].countryIndex, state.countries.length))
+    .style('fill', 'none')
     .attr('stroke-width', PLOT_LINE_STROKE_WIDTH)
     .attr('d', line)
   curves
+    .style('stroke', curve => color(curve[0].countryIndex, state.countries.length))
     .transition()
     .duration(500)
     .attr('d', line)
