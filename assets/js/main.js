@@ -256,6 +256,11 @@ async function drawPlot (state) {
       .attr('font-weight', 'bold')
       .text(ylabel(state)))
 
+  /* Transition setting for curve movement */
+  const MOVE_TRANSITION = d3.transition('move')
+    .duration(250)
+    .ease(d3.easeSinOut)
+
   svg.selectAll('circle.countrypoints')
     .data(countryPoints, function (d) { return d ? d.datestring + d.country : this.id })
     .join(
@@ -280,8 +285,7 @@ async function drawPlot (state) {
           return tooltip.style('visibility', 'hidden')
         }),
       update => update
-        .transition()
-        .duration(500)
+        .transition(MOVE_TRANSITION)
         .style('fill', d => color(d.countryIndex, state.countries.length))
         .attr('cx', d => x(d.x))
         .attr('cy', d => y(d.y)),
@@ -302,8 +306,7 @@ async function drawPlot (state) {
         .style('stroke', d => color(d.countryIndex, state.countries.length))
         .attr('d', d => line(d.curve)),
       update => update
-        .transition()
-        .duration(500)
+        .transition(MOVE_TRANSITION)
         .style('stroke', d => color(d.countryIndex, state.countries.length))
         .attr('d', d => line(d.curve)),
       exit => exit.remove()
@@ -353,10 +356,10 @@ function drawLegend (state) {
     })
     .on('mouseover', function (c) {
       svg.selectAll('path')
-        .filter((d) => (d && d.countryName === c.country))
+        .filter(d => (d && d.countryName === c.country))
         .transition().attr('stroke-width', 2 * PLOT_LINE_STROKE_WIDTH)
       svg.selectAll('circle')
-        .filter((d) => d.country === c.country)
+        .filter(d => d.country === c.country)
         .transition().attr('r', 2 * PLOT_CIRCLE_RADIUS)
       tooltip.html('Population: ' + c.population.toLocaleString())
       return tooltip.style('visibility', 'visible')
@@ -366,10 +369,10 @@ function drawLegend (state) {
       .style('right', (document.body.offsetWidth - d3.event.pageX + 20) + 'px'))
     .on('mouseout', function (c) {
       svg.selectAll('path')
-        .filter((d) => (d && d.countryName === c.country))
+        .filter(d => (d && d.countryName === c.country))
         .transition().attr('stroke-width', PLOT_LINE_STROKE_WIDTH)
       svg.selectAll('circle')
-        .filter((d) => d.country === c.country)
+        .filter(d => d.country === c.country)
         .transition().attr('r', PLOT_CIRCLE_RADIUS)
       return tooltip.style('visibility', 'hidden')
     })
