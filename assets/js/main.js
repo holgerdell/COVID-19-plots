@@ -146,13 +146,18 @@ async function drawPlot (state) {
     let firstDateAboveThreshold
     let previousValue = 0
     /* Massage the data for this country */
-    let countryCurve = data.getTimeSeries(c, state.dataset)
+    const countryData = {
+      countryName: c,
+      countryIndex: i,
+      curve: data.getTimeSeries(c, state.dataset)
+    }
+    countryCurves.push(countryData)
     const smoothness = 3 // number of days to average on
     const buffer = []
     for (let j = 0; j < smoothness; ++j) {
       buffer.push(0)
     }
-    for (const d of countryCurve) {
+    for (const d of countryData.curve) {
       d.countryIndex = i
       let cumulative = (params.normalize) ? d.normalized_value : d.value
       if (params.smooth) {
@@ -184,21 +189,26 @@ async function drawPlot (state) {
         }
       }
     }
-    countryCurve = countryCurve.filter((d) => d.x !== undefined)
-    countryCurves.push(countryCurve)
+    countryData.curve = countryData.curve.filter((d) => d.x !== undefined)
   })
+
+  // collect all points
+  const countryPoints = []
+  countryCurves.forEach((countryCurve, i) =>
+    countryCurve.curve.forEach((point, _) => {
+      countryPoints.push(point)
+    })
+  )
 
   let xmax = -Infinity
   let xmin = Infinity
   let ymax = -Infinity
   let ymin = Infinity
-  countryCurves.forEach((countryCurve) => {
-    for (const d of countryCurve) {
-      if (d.x > xmax) xmax = d.x
-      if (d.x < xmin) xmin = d.x
-      if (d.y > ymax) ymax = d.y
-      if (d.y < ymin) ymin = d.y
-    }
+  countryPoints.forEach(d => {
+    if (d.x > xmax) xmax = d.x
+    if (d.x < xmin) xmin = d.x
+    if (d.y > ymax) ymax = d.y
+    if (d.y < ymin) ymin = d.y
   })
   if (!params.logplot) ymin = 0
   console.debug(`x-axis from ${xmin} to ${xmax}`)
@@ -245,14 +255,6 @@ async function drawPlot (state) {
       .attr('font-weight', 'bold')
       .text(ylabel(state)))
 
-  /// svg.selectAll('g.curves').data(massaged, c => c[0].country)
-
-  const countryPoints = []
-  countryCurves.forEach((countryCurve, i) =>
-    countryCurve.forEach((point, _) => {
-      countryPoints.push(point)
-    })
-  )
   const circles = svg.selectAll('circle.countrypoints')
     .data(countryPoints, function (d) { return d ? d.datestring + d.country : this.id })
   circles.exit().remove()
@@ -285,21 +287,24 @@ async function drawPlot (state) {
 
   const line = d3.line()
     .curve(d3.curveMonotoneX)
-    .x((d) => x(d.x))
-    .y((d) => y(d.y))
+    .x(d => x(d.x))
+    .y(d => y(d.y))
 
-  const curves = svg.selectAll('path.curve').data(countryCurves, c => c[0].country || c)
-  curves.exit().remove()
-  curves.enter().append('path').classed('curve', true)
-    .style('stroke', curve => color(curve[0].countryIndex, state.countries.length))
-    .style('fill', 'none')
-    .attr('stroke-width', PLOT_LINE_STROKE_WIDTH)
-    .attr('d', line)
-  curves
-    .style('stroke', curve => color(curve[0].countryIndex, state.countries.length))
-    .transition()
-    .duration(500)
-    .attr('d', line)
+  svg.selectAll('path.curve')
+    .data(countryCurves, function (d) { return d ? d.countryName : this.id })
+    .join(
+      enter => enter.append('path').classed('curve', true)
+        .style('fill', 'none')
+        .attr('stroke-width', PLOT_LINE_STROKE_WIDTH)
+        .attr('stroke', d => color(d.countryIndex, state.countries.length))
+        .attr('d', d => line(d.curve)),
+      update => update
+        .transition()
+        .duration(500)
+        .attr('stroke', d => color(d.countryIndex, state.countries.length))
+        .attr('d', d => line(d.curve)),
+      exit => exit.remove()
+    )
 }
 
 function drawLegend (state) {
