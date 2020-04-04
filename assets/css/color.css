@@ -1,0 +1,98 @@
+body {
+  background-color: white;
+  color: rgba(0, 0, 0, 0.7);
+}
+
+nav > div > div,
+#creator a,
+#legend > .choices > .curve > span.label {
+  color: black;
+}
+
+nav > div.disabled {
+  color: #ddd;
+}
+
+nav > div.list,
+#legend > .choices > .curve.selected > span.avatar {
+  color: white;
+}
+
+#legend > .choices > .curve:not(.selected):hover,
+#legend > .choices > .curve > span.avatar {
+  background-color: white;
+}
+
+nav,
+#legend,
+nav > div.disabled,
+#legend > .choices > .curve:not(.selected):hover > span.avatar {
+  background-color: #eee;
+}
+
+nav > div.toggled {
+  background-color: #ddd;
+}
+
+nav > div:not(.disabled):hover,
+nav > div:not(.disabled):hover > div {
+  background-color: #cecef6;
+}
+
+nav > div.list {
+  background-color: #777;
+}
+
+#tooltip {
+  background-color: #dd0;
+}
+
+body.color-scheme-dark {
+  background-color: black;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+
+body.color-scheme-dark nav > div > div,
+body.color-scheme-dark #creator a,
+body.color-scheme-dark #legend > .choices > .curve > span.label {
+  color: white;
+}
+
+body.color-scheme-dark nav,
+body.color-scheme-dark #legend,
+body.color-scheme-dark nav > div.disabled,
+body.color-scheme-dark #legend > .choices > .curve:not(.selected):hover > span.avatar {
+  background-color: #111;
+}
+
+body.color-scheme-dark #legend > .choices > .curve:not(.selected):hover,
+body.color-scheme-dark #legend > .choices > .curve > span.avatar {
+  background-color: black;
+}
+
+body.color-scheme-dark nav > div:not(.disabled):hover,
+body.color-scheme-dark nav > div:not(.disabled):hover > div {
+  background-color: #313109;
+}
+
+body.color-scheme-dark nav > div.list {
+  background-color: #888;
+}
+
+body.color-scheme-dark nav > div.disabled {
+  color: #222;
+}
+
+body.color-scheme-dark #search {
+  color: #ccc;
+  background-color: #333;
+}
+
+body.color-scheme-dark nav > div.toggled {
+  background-color: #222;
+}
+
+body.color-scheme-dark #tooltip {
+  background-color: #220;
+}

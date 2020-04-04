@@ -14,6 +14,7 @@ const defaultCountries = [
  * new toggles and options can simply be added here */
 const defaultState = {
   plot: 'calendar',
+  colorScheme: 'light',
   dataset: data.defaultDataset,
   countries: defaultCountries,
   params: {
@@ -113,10 +114,16 @@ async function onStateChange () {
     updateState({ params: { calendar: { logplot } } })
   } else {
     d3.select('#tooltip').style('visibility', 'hidden')
+    updateColorScheme(state)
     drawNav(state)
     await drawPlot(state) // timeSeriesData is loaded here
     drawLegend(state) // requires timeSeriesData to be loaded
   }
+}
+
+function updateColorScheme ( state ) {
+  d3.select('body').classed('color-scheme-dark', state.colorScheme === 'dark')
+  d3.select('body').classed('color-scheme-light', state.colorScheme === 'light')
 }
 
 async function drawPlot (state) {
@@ -388,6 +395,7 @@ function drawLegend (state) {
 /** The main function is called when the page has loaded */
 async function main () {
   const state = getState()
+  updateColorScheme(state)
   drawNav(state)
 
   d3.select('body').classed('loading', true)
@@ -492,9 +500,9 @@ const prevDataSet = () => cycle('dataset', data.availableDatasets(), -1)
 const nextPlot = () => cycle('plot', Object.keys(plots), +1)
 const prevPlot = () => cycle('plot', Object.keys(plots), -1)
 
-const plot = {
-  text: state => state.plot[0].toUpperCase(),
-  tooltip: () => `Current plot. Available plots are: ${Object.keys(plots).join(', ')}.`,
+const buttonPlot = {
+  icon: state => plots[state.plot].icon,
+  tooltip: state => `Current plot is '${state.plot}'. Available plots are: ${Object.keys(plots).join(', ')}. [p]`,
   classList: {
     list: true
   },
@@ -507,18 +515,40 @@ const plot = {
   onClick: nextPlot
 }
 
-const help = {
+const buttonColorScheme = {
+  icon: state => state.colorScheme === 'light' ? 'brightness_5' : 'brightness_2',
+  tooltip: state => `Color scheme. Current: ${state.colorScheme}`,
+  onClick: () => updateState({ colorScheme: getState().colorScheme === 'light' ? 'dark' : 'light' })
+}
+
+const buttonDataset = {
+  icon: 'show_chart',
+  tooltip: 'Cycle through available datasets [d]',
+  style: {
+    backgroundColor: state => {
+      const datasets = data.availableDatasets()
+      return color(datasets.indexOf(state.dataset), datasets.length)
+    }
+  },
+  classList: {
+    list: true
+  },
+  onClick: nextDataSet
+}
+
+const buttonHelp = {
   text: '?',
   tooltip: 'You can use URL parameters, for example: <span class="url">index.html?normalize=true&amp;logplot=true&amp;countries=China;Italy;South%20Korea</span>'
 }
 
 const plots = {
   calendar: {
+    icon: 'schedule',
     nav: [
-      plot,
-      help,
+      buttonColorScheme,
+      buttonPlot,
       {
-        text: 'c',
+        icon: 'functions',
         tooltip: 'Cumulative plot [c]',
         classList: {
           toggled: state => state.params.calendar.cumulative
@@ -526,7 +556,7 @@ const plots = {
         onClick: toggleCumulative
       },
       {
-        text: 'log',
+        icon: 'linear_scale',
         tooltip: 'Switch to log-plot [l]',
         classList: {
           toggled: state => state.params.calendar.logplot,
@@ -535,29 +565,16 @@ const plots = {
         onClick: toggleLog
       },
       {
-        text: 'n',
-        tooltip: 'Normalize by population (default) [n]',
+        icon: 'supervisor_account',
+        tooltip: 'Normalize by population [n]',
         classList: {
           toggled: state => state.params.calendar.normalize
         },
         onClick: toggleNormalize
       },
+      buttonDataset,
       {
-        text: 'd',
-        tooltip: 'Cycle through available datasets [d]',
-        style: {
-          backgroundColor: state => {
-            const datasets = data.availableDatasets()
-            return color(datasets.indexOf(state.dataset), datasets.length)
-          }
-        },
-        classList: {
-          list: true
-        },
-        onClick: nextDataSet
-      },
-      {
-        text: 'a',
+        icon: state => state.params.calendar.align ? 'call_merge' : 'call_split',
         tooltip: state => state.params.calendar.normalize
           ? `Align by first day with ${ALIGN_THRESHOLD_NORMALIZED} cases per 100,000 [a]`
           : `Align by first day with ${ALIGN_THRESHOLD} cases [a]`,
@@ -567,7 +584,7 @@ const plots = {
         onClick: toggleAlign
       },
       {
-        text: 's',
+        icon: 'gesture',
         tooltip: 'Take average of last three measurements [s]',
         classList: {
           toggled: state => state.params.calendar.smooth
@@ -592,33 +609,21 @@ const plots = {
     }
   },
   trajectory: {
+    icon: 'trending_down',
     nav: [
-      plot,
-      help,
+      buttonColorScheme,
+      buttonPlot,
       {
-        text: 'log',
+        icon: 'linear_scale',
         tooltip: 'Switch to log-plot [l]',
         classList: {
           toggled: state => state.params.trajectory.logplot
         },
         onClick: toggleLog
       },
+      buttonDataset,
       {
-        text: 'd',
-        tooltip: 'Cycle through available datasets [d]',
-        style: {
-          backgroundColor: state => {
-            const datasets = data.availableDatasets()
-            return color(datasets.indexOf(state.dataset), datasets.length)
-          }
-        },
-        classList: {
-          list: true
-        },
-        onClick: nextDataSet
-      },
-      {
-        text: 's',
+        icon: 'gesture',
         tooltip: 'Take average of last three measurements [s]',
         classList: {
           toggled: state => state.params.trajectory.smooth
@@ -658,8 +663,16 @@ function drawNav (state) {
 
   for (const item of plot.nav) {
     const button = document.createElement('div')
-    const text = document.createTextNode(fromConstantOrCallable(item.text, state))
-    button.appendChild(text)
+    if (item.text) {
+      const text = document.createTextNode(fromConstantOrCallable(item.text, state))
+      button.appendChild(text)
+    }
+    if (item.icon) {
+      const icon = document.createElement('i')
+      icon.classList.add('material-icons')
+      icon.innerText = fromConstantOrCallable(item.icon, state)
+      button.appendChild(icon)
+    }
     if (item.tooltip) {
       const tooltip = document.createElement('div')
       tooltip.innerHTML = fromConstantOrCallable(item.tooltip, state)
