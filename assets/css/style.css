@@ -1,5 +1,4 @@
 body {
-  color: rgba(0, 0, 0, 0.7);
   display: grid;
   font-family: "Times", "Georgia", serif;
   grid-gap: 0;
@@ -19,10 +18,6 @@ body {
   font-size: small;
   left: 2em;
   position: absolute;
-}
-
-#creator a {
-  color: black;
 }
 
 @media only screen and (min-width: 500px) {
@@ -55,11 +50,6 @@ header { grid-area: header; }
 
 main { grid-area: main; }
 
-nav,
-#legend {
-  background-color: #eee;
-}
-
 #legend {
   grid-area: legend;
   width: 200px;
@@ -85,12 +75,7 @@ nav,
   white-space: nowrap;
 }
 
-#legend > .choices > .curve:not(.selected):hover {
-  background-color: white;
-}
-
 #legend > .choices > .curve > span.avatar {
-  background-color: white;
   border-radius: 20px;
   display: block;
   float: left;
@@ -108,20 +93,11 @@ nav,
   width: 40px;
 }
 
-#legend > .choices > .curve.selected > span.avatar {
-  color: white;
-}
-
 #legend > .choices > .curve.selected:hover > span.avatar {
   opacity: 0.5;
 }
 
-#legend > .choices > .curve:not(.selected):hover > span.avatar {
-  background-color: #eee;
-}
-
 #legend > .choices > .curve > span.label {
-  color: black;
   font-family: sans-serif;
 }
 
@@ -187,9 +163,8 @@ nav > div {
   width: 40px;
 }
 
-nav > div.list {
-  color: white;
-  background-color: #777;
+nav > div > i.material-icons {
+  margin: 8px 0;
 }
 
 nav > div > div {
@@ -198,7 +173,6 @@ nav > div > div {
   font-family: "Times", "Georgia", serif;
   font-size: large;
   font-weight: normal;
-  color: black;
   left: 7rem;
   padding: 0.5em 1em 0.5em 1em;
   position: absolute;
@@ -207,25 +181,11 @@ nav > div > div {
   visibility: hidden;
 }
 
-nav > div.toggled {
-  background-color: #ddd;
-}
-
-nav > div.disabled {
-  color: #ddd;
-  background-color: #eee;
-}
-
 nav > div:not(.disabled) {
   cursor: pointer;
 }
 
-nav > div:not(.disabled):hover {
-  background-color: #cecef6;
-}
-
 nav > div:not(.disabled):hover > div {
-  background-color: #cecef6;
   visibility: visible;
 }
 
@@ -260,7 +220,6 @@ nav > div:not(.disabled):hover > div {
 }
 
 #tooltip {
-  background: #dd0;
   border: 2px solid;
   border-radius: 10px;
   font-size: large;
