@@ -47,6 +47,7 @@ const MILLISECONDS_IN_A_DAY = 1000 * 60 * 60 * 24
 
 /* Style configuration */
 const PLOT_CIRCLE_RADIUS = 3
+const PLOT_CIRCLE_HOVERRADIUS = 15
 const PLOT_LINE_STROKE_WIDTH = 3
 
 /* Align curve threshold */
@@ -268,34 +269,50 @@ async function drawPlot (state) {
     .duration(250)
     .ease(d3.easeSinOut)
 
-  svg.selectAll('circle.countrypoints')
+  svg.selectAll('g.countrypoint')
     .data(countryPoints, function (d) { return d ? d.datestring + d.country : this.id })
     .join(
-      enter => enter
-        .append('circle').classed('countrypoints', true)
-        .style('fill', d => color(d.countryIndex, state.countries.length))
-        .attr('cx', (d) => x(d.x))
-        .attr('cy', (d) => y(d.y))
-        .attr('r', PLOT_CIRCLE_RADIUS)
-        .on('mouseover', function (d, _) {
-          d3.select(this).attr('r', 2 * PLOT_LINE_STROKE_WIDTH)
-          tooltip.html(d.country +
-            '<br />Value: ' + d.value.toLocaleString() +
-            '<br />Date: ' + d3.timeFormat('%Y-%m-%d')(d.date))
-          return tooltip.style('visibility', 'visible')
-        })
-        .on('mousemove', () => tooltip
-          .style('top', (d3.event.pageY - 15) + 'px')
-          .style('right', (document.body.offsetWidth - d3.event.pageX + 20) + 'px'))
-        .on('mouseout', function (_) {
-          d3.select(this).transition().attr('r', PLOT_CIRCLE_RADIUS)
-          return tooltip.style('visibility', 'hidden')
-        }),
-      update => update
-        .transition(MOVE_TRANSITION)
-        .style('fill', d => color(d.countryIndex, state.countries.length))
-        .attr('cx', d => x(d.x))
-        .attr('cy', d => y(d.y)),
+      function (enter) {
+        const g = enter.append('g').classed('countrypoint', true)
+        g.append('circle').classed('drawarea', true)
+          .style('fill', d => color(d.countryIndex, state.countries.length))
+          .attr('cx', (d) => x(d.x))
+          .attr('cy', (d) => y(d.y))
+          .attr('r', PLOT_CIRCLE_RADIUS)
+        g.append('circle').classed('hoverarea', true)
+          .style('fill', 'transparent')
+          .attr('cx', (d) => x(d.x))
+          .attr('cy', (d) => y(d.y))
+          .attr('r', PLOT_CIRCLE_HOVERRADIUS)
+          .on('mouseover', function (d, _) {
+            d3.select(this.parentNode).select('circle.drawarea')
+              .transition('expand').attr('r', 2 * PLOT_CIRCLE_RADIUS)
+            tooltip.html(d.country +
+              '<br />Value: ' + d.value.toLocaleString() +
+              '<br />Date: ' + d3.timeFormat('%Y-%m-%d')(d.date))
+            return tooltip.style('visibility', 'visible')
+          })
+          .on('mousemove', () => tooltip
+            .style('top', (d3.event.pageY - 15) + 'px')
+            .style('right', (document.body.offsetWidth - d3.event.pageX + 20) + 'px'))
+          .on('mouseout', function (_) {
+            d3.select(this.parentNode).select('circle.drawarea')
+              .transition('expand').attr('r', PLOT_CIRCLE_RADIUS)
+            return tooltip.style('visibility', 'hidden')
+          })
+        return g
+      },
+      function (update) {
+        update.select('circle.drawarea')
+          .transition(MOVE_TRANSITION)
+          .style('fill', d => color(d.countryIndex, state.countries.length))
+          .attr('cx', d => x(d.x))
+          .attr('cy', d => y(d.y))
+        update.select('circle.hoverarea')
+          .attr('cx', d => x(d.x))
+          .attr('cy', d => y(d.y))
+        return update
+      },
       exit => exit.remove()
     )
 
@@ -364,10 +381,10 @@ function drawLegend (state) {
     .on('mouseover', function (c) {
       svg.selectAll('path')
         .filter(d => (d && d.countryName === c.country))
-        .transition().attr('stroke-width', 2 * PLOT_LINE_STROKE_WIDTH)
-      svg.selectAll('circle')
-        .filter(d => d.country === c.country)
-        .transition().attr('r', 2 * PLOT_CIRCLE_RADIUS)
+        .transition('expand2').attr('stroke-width', 2 * PLOT_LINE_STROKE_WIDTH)
+      svg.selectAll('circle.drawarea')
+        .filter(d => d && d.country === c.country)
+        .transition('expand2').attr('r', 2 * PLOT_CIRCLE_RADIUS)
       tooltip.html('Population: ' + c.population.toLocaleString())
       return tooltip.style('visibility', 'visible')
     })
@@ -377,10 +394,10 @@ function drawLegend (state) {
     .on('mouseout', function (c) {
       svg.selectAll('path')
         .filter(d => (d && d.countryName === c.country))
-        .transition().attr('stroke-width', PLOT_LINE_STROKE_WIDTH)
-      svg.selectAll('circle')
-        .filter(d => d.country === c.country)
-        .transition().attr('r', PLOT_CIRCLE_RADIUS)
+        .transition('expand2').attr('stroke-width', PLOT_LINE_STROKE_WIDTH)
+      svg.selectAll('circle.drawarea')
+        .filter(d => d && d.country === c.country)
+        .transition('expand2').attr('r', PLOT_CIRCLE_RADIUS)
       return tooltip.style('visibility', 'hidden')
     })
 
