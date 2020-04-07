@@ -1,7 +1,6 @@
 /* This module is the interface between main.js and the time-series data. */
 
 import * as jh from './jh.js'
-import * as countries from './countries.js'
 import * as owid from './owid.js'
 
 /* This dict holds the available time series data
@@ -39,7 +38,6 @@ export async function fetchTimeSeriesData (dataset) {
       rows = []
     }
     rows = parseDate(rows)
-    rows = addNormalizedValues(rows)
     for (const row of rows) {
       if (dataset.split('_')[0] !== row.source.split('_')[0]) {
         console.error(`Requested ${dataset} but got ${row.source}`)
@@ -60,15 +58,6 @@ export async function fetchTimeSeriesData (dataset) {
 function * parseDate (rows) {
   for (const row of rows) {
     row.date = d3.timeParse('%Y-%m-%d')(row.datestring)
-    yield row
-  }
-}
-
-function * addNormalizedValues (rows) {
-  for (const row of rows) {
-    const info = countries.getInfo(row.country)
-    if (info !== undefined) row.normalized_value = row.value * 100000.0 / info.population
-    else if (row.value === 0) row.normalized_value = 0
     yield row
   }
 }

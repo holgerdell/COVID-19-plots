@@ -28,6 +28,9 @@ const defaultState = {
     trajectory: {
       logplot: true,
       smooth: true
+    },
+    doubling: {
+      smooth: true
     }
   }
 }
@@ -53,6 +56,8 @@ const PLOT_LINE_STROKE_WIDTH = 3
 /* Align curve threshold */
 const ALIGN_THRESHOLD_NORMALIZED = 0.1 // align to first day >= 0.1 cases per 100,000
 const ALIGN_THRESHOLD = 100 // align to first day with >= 100 cases
+
+const SMOOTHNESS_PARAMETER = 3 // number of days to average on
 
 /** Given an object and the total number of objects, returns a color
   * @param {Number} obj is the current object (between 0 and numObjects-1)
@@ -110,7 +115,23 @@ async function onStateChange () {
   console.debug('onStateChange')
   const state = getState()
 
-  const logplot = state.params.calendar.logplot && state.params.calendar.cumulative // cannot be both logplot and non-cumulative ?
+  if (state.plot === 'doubling') {
+    if (state.params.doubling.logplot) {
+      updateState({ params: { doubling: { logplot: false } } })
+      return
+    }
+    if (state.params.doubling.align) {
+      updateState({ params: { doubling: { align: false } } })
+      return
+    }
+    if (state.params.doubling.normalize) {
+      updateState({ params: { doubling: { normalize: false } } })
+      return
+    }
+  }
+
+  // cannot be both logplot and non-cumulative ?
+  const logplot = state.params.calendar.logplot && state.params.calendar.cumulative
   if (state.plot === 'calendar' && logplot !== state.params.calendar.logplot) {
     updateState({ params: { calendar: { logplot } } })
   } else {
@@ -127,6 +148,134 @@ function updateColorScheme (state) {
   d3.select('body').classed('color-scheme-light', state.colorScheme === 'light')
 }
 
+function setField (points, source = 'value', target = 'y') {
+  for (const d of points) {
+    d[target] = d[source]
+  }
+}
+
+function multiply (points, field = 'y', factor = 1) {
+  for (const d of points) {
+    d[field] = d[field] * factor
+  }
+}
+
+/* given a sequence of d with a field d.field, smoothen the d.field value */
+function smoothen (points, field = 'y') {
+  const buffer = []
+  for (let j = 0; j < SMOOTHNESS_PARAMETER; ++j) {
+    buffer.push(0)
+  }
+  for (const d of points) {
+    buffer.splice(0, 1)
+    buffer.push(d[field])
+    d[field] = buffer.reduce((a, b) => a + b) / buffer.length
+  }
+}
+
+function * yieldRawData (countries, dataset) {
+  for (let i = 0; i < countries.length; i++) {
+    yield ({
+      countryName: countries[i],
+      countryIndex: i,
+      curve: data.getTimeSeries(countries[i], dataset)
+    })
+  }
+}
+
+function getLastDateBelowThreshold (points, threshold, field = 'y') {
+  let last
+  for (const p of points) {
+    if (p[field] >= threshold) {
+      return (last !== undefined) ? last.date : undefined
+    } else {
+      last = p
+    }
+  }
+  return undefined
+}
+
+function getFirstDateAboveThreshold (points, threshold, field = 'y') {
+  for (const p of points) {
+    if (p[field] >= threshold) {
+      return p.date
+    }
+  }
+  return undefined
+}
+
+function * prepareDoublingTimeData (state) {
+  const countryCurves = yieldRawData(state.countries, state.dataset)
+  const params = state.params[state.plot]
+  for (const countryData of countryCurves) {
+    setField(countryData.curve, 'value', 'y')
+    setField(countryData.curve, 'date', 'x')
+    if (params.smooth) smoothen(countryData.curve, 'y')
+
+    for (const d of countryData.curve) {
+      d.countryIndex = countryData.countryIndex
+      const last = getLastDateBelowThreshold(countryData.curve, d.y / 2, 'y')
+      if (last !== undefined) {
+        d.doublingTime = (d.date - last) / MILLISECONDS_IN_A_DAY
+      } else {
+        d.doublingTime = undefined
+      }
+    }
+    setField(countryData.curve, 'doublingTime', 'y')
+    countryData.curve = countryData.curve.filter((d) => d.x !== undefined && d.y !== undefined)
+    yield countryData
+  }
+}
+
+function * prepareDateOrTrajectoryData (state) {
+  const countryCurves = yieldRawData(state.countries, state.dataset)
+  const params = state.params[state.plot]
+  for (const countryData of countryCurves) {
+    setField(countryData.curve, 'value', 'y')
+    if (params.normalize) multiply(countryData.curve, 'y', 100000 / countries.getInfo(countryData.countryName).population)
+    if (params.smooth) smoothen(countryData.curve, 'y')
+
+    const threshold = (params.normalize) ? ALIGN_THRESHOLD_NORMALIZED : ALIGN_THRESHOLD
+    const firstDateAboveThreshold = getFirstDateAboveThreshold(countryData.curve, threshold, 'y')
+
+    let previousValue = 0
+    for (const d of countryData.curve) {
+      const cumulative = d.y
+      d.countryIndex = countryData.countryIndex
+      if (!isNaN(d.y) && d.y !== undefined && d.y > 0) {
+        if (!params.cumulative || state.plot === 'trajectory') {
+          d.y -= previousValue
+          previousValue = cumulative
+        }
+      }
+      if (params.logplot) d.y = Math.max(d.y, 1)
+      if (state.plot === 'trajectory') {
+        d.x = cumulative
+        if (params.logplot) d.x = Math.max(d.x, 1)
+      } else if (!params.align) {
+        d.x = d.date
+      } else {
+        if (d.date >= firstDateAboveThreshold) {
+          d.x = (d.date - firstDateAboveThreshold) / MILLISECONDS_IN_A_DAY
+        } else {
+          d.x = undefined
+        }
+      }
+    }
+    countryData.curve = countryData.curve.filter((d) => d.x !== undefined && d.y !== undefined)
+    yield countryData
+  }
+}
+
+function getTooltip (d) {
+  let html = d.country
+  if (d.y !== d.value) {
+    html += '<br />y: ' + d.y.toLocaleString()
+  }
+  html += '<br />Value: ' + d.value.toLocaleString()
+  html += '<br />Date: ' + d3.timeFormat('%Y-%m-%d')(d.date)
+  return html
+}
 async function drawPlot (state) {
   const tooltip = d3.select('#tooltip')
   const params = state.params[state.plot]
@@ -150,75 +299,35 @@ async function drawPlot (state) {
   await data.fetchTimeSeriesData(state.dataset)
   d3.select('body').classed('loading', false)
 
-  const countryCurves = []
-  state.countries.forEach(function (c, i) {
-    let firstDateAboveThreshold
-    let previousValue = 0
-    /* Massage the data for this country */
-    const countryData = {
-      countryName: c,
-      countryIndex: i,
-      curve: data.getTimeSeries(c, state.dataset)
-    }
-    countryCurves.push(countryData)
-    const smoothness = 3 // number of days to average on
-    const buffer = []
-    for (let j = 0; j < smoothness; ++j) {
-      buffer.push(0)
-    }
-    for (const d of countryData.curve) {
-      d.countryIndex = i
-      let cumulative = (params.normalize) ? d.normalized_value : d.value
-      if (params.smooth) {
-        buffer.splice(0, 1)
-        buffer.push(cumulative)
-        cumulative = buffer.reduce((x, y) => x + y) / buffer.length
-      }
-      if (!isNaN(cumulative) && cumulative !== undefined && cumulative > 0) {
-        d.y = cumulative
-        if (!params.cumulative || state.plot === 'trajectory') {
-          d.y -= previousValue
-          if (params.logplot) d.y = Math.max(d.y, 1)
-          previousValue = cumulative
-        }
-        if (state.plot === 'trajectory') {
-          d.x = cumulative
-        } else if (!params.align) {
-          d.x = d.date
-        } else {
-          const threshold = (params.normalize) ? ALIGN_THRESHOLD_NORMALIZED : ALIGN_THRESHOLD
-          if (firstDateAboveThreshold === undefined && cumulative >= threshold) {
-            firstDateAboveThreshold = d.date
-          }
-          if (firstDateAboveThreshold !== undefined) {
-            d.x = (d.date - firstDateAboveThreshold) / MILLISECONDS_IN_A_DAY
-          } else {
-            d.x = undefined
-          }
-        }
-      }
-    }
-    countryData.curve = countryData.curve.filter((d) => d.x !== undefined)
-  })
+  let countryCurves = []
+
+  if (state.plot === 'doubling') {
+    countryCurves = prepareDoublingTimeData(state)
+  } else {
+    countryCurves = prepareDateOrTrajectoryData(state)
+  }
+
+  countryCurves = Array.from(countryCurves)
+  console.log(countryCurves)
 
   // collect all points
   const countryPoints = []
-  countryCurves.forEach((countryCurve, i) =>
-    countryCurve.curve.forEach((point, _) => {
-      countryPoints.push(point)
-    })
-  )
+  for (const c of countryCurves) {
+    for (const p of c.curve) {
+      countryPoints.push(p)
+    }
+  }
 
   let xmax = -Infinity
   let xmin = Infinity
   let ymax = -Infinity
   let ymin = Infinity
-  countryPoints.forEach(d => {
-    if (d.x > xmax) xmax = d.x
-    if (d.x < xmin) xmin = d.x
-    if (d.y > ymax) ymax = d.y
-    if (d.y < ymin) ymin = d.y
-  })
+  for (const p of countryPoints) {
+    if (p.x > xmax) xmax = p.x
+    if (p.x < xmin) xmin = p.x
+    if (p.y > ymax) ymax = p.y
+    if (p.y < ymin) ymin = p.y
+  }
   if (!params.logplot) ymin = 0
   console.debug(`x-axis from ${xmin} to ${xmax}`)
   console.debug(`y-axis from ${ymin} to ${ymax}`)
@@ -287,9 +396,7 @@ async function drawPlot (state) {
           .on('mouseover', function (d, _) {
             d3.select(this.parentNode).select('circle.drawarea')
               .transition('expand').attr('r', 2 * PLOT_CIRCLE_RADIUS)
-            tooltip.html(d.country +
-              '<br />Value: ' + d.value.toLocaleString() +
-              '<br />Date: ' + d3.timeFormat('%Y-%m-%d')(d.date))
+            tooltip.html(getTooltip(d))
             return tooltip.style('visibility', 'visible')
           })
           .on('mousemove', () => tooltip
@@ -304,7 +411,6 @@ async function drawPlot (state) {
       },
       function (update) {
         update.select('circle.drawarea')
-          .transition(MOVE_TRANSITION)
           .style('fill', d => color(d.countryIndex, state.countries.length))
           .attr('cx', d => x(d.x))
           .attr('cy', d => y(d.y))
@@ -639,6 +745,35 @@ const plots = {
         tooltip: 'Take average of last three measurements [s]',
         classList: {
           toggled: state => state.params.trajectory.smooth
+        },
+        onClick: toggleSmooth
+      }
+    ],
+    shortcuts: (event) => {
+      if (!event.ctrlKey && !event.altKey) {
+        switch (event.key) {
+          case 'p': nextPlot(); break
+          case 'P': prevPlot(); break
+          case 'l': toggleLog(); break
+          case 'n': toggleNormalize(); break
+          case 'd': nextDataSet(); break
+          case 'D': prevDataSet(); break
+          case 's': toggleSmooth(); break
+        }
+      }
+    }
+  },
+  doubling: {
+    icon: 'double_arrow',
+    nav: [
+      buttonColorScheme,
+      buttonPlot,
+      buttonDataset,
+      {
+        icon: 'gesture',
+        tooltip: 'Take average of last three measurements [s]',
+        classList: {
+          toggled: state => state.params.doubling.smooth
         },
         onClick: toggleSmooth
       }
