@@ -8,7 +8,7 @@ export function get (...defaults) {
     return merge({}, ...defaults, parsed)
   } catch (e) {
     console.debug('could not parse hash', hash)
-    console.debug('outputing defaults', ...defaults)
+    console.debug('outputting defaults', ...defaults)
     return merge({}, ...defaults)
   }
 }
