@@ -137,7 +137,9 @@ function * prepareDateOrTrajectoryData (state) {
 function toggle (key) {
   return () => {
     const state = getState()
-    updateState({ params: { [state.plot]: { [key]: !state.params[state.plot][key] } } })
+    if (state.params[state.plot][key] !== undefined) { // only toggle if parameter is defined for this plot.
+      updateState({ params: { [state.plot]: { [key]: !state.params[state.plot][key] } } })
+    }
   }
 }
 
