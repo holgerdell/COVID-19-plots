@@ -601,7 +601,7 @@ const buttonColorScheme = {
 }
 
 const buttonDataset = {
-  icon: 'show_chart',
+  icon: 'folder',
   tooltip: 'Cycle through available datasets [d]',
   style: {
     backgroundColor: state => {
@@ -613,6 +613,15 @@ const buttonDataset = {
     list: true
   },
   onClick: nextDataSet
+}
+
+const buttonSmooth = {
+  icon: 'gesture',
+  tooltip: 'Take average of last three measurements [s]',
+  classList: {
+    toggled: state => state.params[state.plot].smooth
+  },
+  onClick: toggleSmooth
 }
 
 const plots = {
@@ -633,6 +642,7 @@ const plots = {
     nav: [
       buttonColorScheme,
       buttonPlot,
+      buttonDataset,
       {
         icon: 'functions',
         tooltip: 'Cumulative plot [c]',
@@ -658,7 +668,6 @@ const plots = {
         },
         onClick: toggleNormalize
       },
-      buttonDataset,
       {
         icon: state => state.params.calendar.align ? 'call_merge' : 'call_split',
         tooltip: state => state.params.calendar.normalize
@@ -669,14 +678,7 @@ const plots = {
         },
         onClick: toggleAlign
       },
-      {
-        icon: 'gesture',
-        tooltip: 'Take average of last three measurements [s]',
-        classList: {
-          toggled: state => state.params.calendar.smooth
-        },
-        onClick: toggleSmooth
-      }
+      buttonSmooth
     ],
     shortcuts: (event) => {
       if (!event.ctrlKey && !event.altKey) {
@@ -702,6 +704,7 @@ const plots = {
     nav: [
       buttonColorScheme,
       buttonPlot,
+      buttonDataset,
       {
         icon: 'linear_scale',
         tooltip: 'Switch to log-plot [l]',
@@ -710,15 +713,7 @@ const plots = {
         },
         onClick: toggleLog
       },
-      buttonDataset,
-      {
-        icon: 'gesture',
-        tooltip: 'Take average of last three measurements [s]',
-        classList: {
-          toggled: state => state.params.trajectory.smooth
-        },
-        onClick: toggleSmooth
-      }
+      buttonSmooth
     ],
     shortcuts: (event) => {
       if (!event.ctrlKey && !event.altKey) {
@@ -743,14 +738,7 @@ const plots = {
       buttonColorScheme,
       buttonPlot,
       buttonDataset,
-      {
-        icon: 'gesture',
-        tooltip: 'Take average of last three measurements [s]',
-        classList: {
-          toggled: state => state.params.doubling.smooth
-        },
-        onClick: toggleSmooth
-      }
+      buttonSmooth
     ],
     shortcuts: (event) => {
       if (!event.ctrlKey && !event.altKey) {
