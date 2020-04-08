@@ -743,21 +743,6 @@ const plots = {
     scaleX: (params, domain, range) => d3.scaleUtc(domain, range),
     scaleY: (params, domain, range) => d3.scaleLinear(domain, range),
     curves: prepareDoublingTimeData,
-    fixState: (state) => {
-      if (state.params.doubling.logplot) {
-        updateState({ params: { doubling: { logplot: false } } })
-        return true
-      }
-      if (state.params.doubling.align) {
-        updateState({ params: { doubling: { align: false } } })
-        return true
-      }
-      if (state.params.doubling.normalize) {
-        updateState({ params: { doubling: { normalize: false } } })
-        return true
-      }
-      return false
-    },
     icon: 'double_arrow',
     nav: [
       buttonColorScheme,
