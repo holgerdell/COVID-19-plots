@@ -92,7 +92,7 @@ function ylabel (state) {
   ylabel += string.capitalize(state.plot)
   ylabel += ' plot for '
   ylabel += data.describe(state.dataset)
-  if (state.plot === 'calendar' && !state.params[state.plot].cumulative) {
+  if (state.params[state.plot].cumulative === false) {
     ylabel += ' per day'
   }
   if (state.params[state.plot].normalize) {
@@ -114,33 +114,15 @@ function ylabel (state) {
 async function onStateChange () {
   console.debug('onStateChange')
   const state = getState()
+  const plot = plots[state.plot]
 
-  if (state.plot === 'doubling') {
-    if (state.params.doubling.logplot) {
-      updateState({ params: { doubling: { logplot: false } } })
-      return
-    }
-    if (state.params.doubling.align) {
-      updateState({ params: { doubling: { align: false } } })
-      return
-    }
-    if (state.params.doubling.normalize) {
-      updateState({ params: { doubling: { normalize: false } } })
-      return
-    }
-  }
+  if (plot.fixState && plot.fixState(state)) return
 
-  // cannot be both logplot and non-cumulative ?
-  const logplot = state.params.calendar.logplot && state.params.calendar.cumulative
-  if (state.plot === 'calendar' && logplot !== state.params.calendar.logplot) {
-    updateState({ params: { calendar: { logplot } } })
-  } else {
-    d3.select('#tooltip').style('visibility', 'hidden')
-    updateColorScheme(state)
-    drawNav(state)
-    await drawPlot(state) // timeSeriesData is loaded here
-    drawLegend(state) // requires timeSeriesData to be loaded
-  }
+  d3.select('#tooltip').style('visibility', 'hidden')
+  updateColorScheme(state)
+  drawNav(state)
+  await drawPlot(state) // timeSeriesData is loaded here
+  drawLegend(state) // requires timeSeriesData to be loaded
 }
 
 function updateColorScheme (state) {
@@ -277,6 +259,7 @@ function getTooltip (d) {
   return html
 }
 async function drawPlot (state) {
+  const plot = plots[state.plot]
   const tooltip = d3.select('#tooltip')
   const params = state.params[state.plot]
 
@@ -299,14 +282,7 @@ async function drawPlot (state) {
   await data.fetchTimeSeriesData(state.dataset)
   d3.select('body').classed('loading', false)
 
-  let countryCurves = []
-
-  if (state.plot === 'doubling') {
-    countryCurves = prepareDoublingTimeData(state)
-  } else {
-    countryCurves = prepareDateOrTrajectoryData(state)
-  }
-
+  let countryCurves = plot.curves(state)
   countryCurves = Array.from(countryCurves)
   console.log(countryCurves)
 
@@ -332,21 +308,8 @@ async function drawPlot (state) {
   console.debug(`x-axis from ${xmin} to ${xmax}`)
   console.debug(`y-axis from ${ymin} to ${ymax}`)
 
-  /* x is a function that maps Date objects to x-coordinates on-screen */
-  let x = null
-  if (state.plot === 'trajectory') {
-    x = ((params.logplot) ? d3.scaleLog() : d3.scaleLinear())
-      .domain([xmin, xmax])
-      .range([margin.left, width - margin.right])
-  } else if (params.align) {
-    x = d3.scaleLinear()
-      .domain([xmin, xmax]).nice()
-      .range([margin.left, width - margin.right])
-  } else {
-    x = d3.scaleUtc()
-      .domain([xmin, xmax])
-      .range([margin.left, width - margin.right])
-  }
+  /* x is a function that maps data points to x-coordinates on-screen */
+  const x = plot.scaleX(params, [xmin, xmax], [margin.left, width - margin.right])
 
   /* draw the x-axis */
   svg.selectAll('.xaxis').remove()
@@ -355,10 +318,8 @@ async function drawPlot (state) {
     .call(d3.axisBottom(x))
     .attr('transform', `translate(0,${height - margin.bottom})`)
 
-  /* y is a function that maps values to y-coordinates on-screen */
-  const y = ((params.logplot) ? d3.scaleLog() : d3.scaleLinear())
-    .domain([ymin, ymax])
-    .range([height - margin.bottom, margin.top])
+  /* y is a function that maps data points to y-coordinates on-screen */
+  const y = plot.scaleY(params, [ymin, ymax], [height - margin.bottom, margin.top])
 
   /* draw the y-axis */
   svg.selectAll('.yaxis').remove()
@@ -661,6 +622,18 @@ const buttonDataset = {
 
 const plots = {
   calendar: {
+    scaleX: (params, domain, range) => params.align ? d3.scaleLinear(domain, range).nice() : d3.scaleUtc(domain, range),
+    scaleY: (params, domain, range) => params.logplot ? d3.scaleLog(domain, range) : d3.scaleLinear(domain, range),
+    curves: prepareDateOrTrajectoryData,
+    fixState: (state) => {
+      // cannot be both logplot and non-cumulative ?
+      const logplot = state.params.calendar.logplot && state.params.calendar.cumulative
+      if (logplot !== state.params.calendar.logplot) {
+        updateState({ params: { calendar: { logplot } } })
+        return true
+      }
+      return false
+    },
     icon: 'schedule',
     nav: [
       buttonColorScheme,
@@ -727,6 +700,9 @@ const plots = {
     }
   },
   trajectory: {
+    scaleX: (params, domain, range) => params.logplot ? d3.scaleLog(domain, range) : d3.scaleLinear(domain, range),
+    scaleY: (params, domain, range) => params.logplot ? d3.scaleLog(domain, range) : d3.scaleLinear(domain, range),
+    curves: prepareDateOrTrajectoryData,
     icon: 'trending_down',
     nav: [
       buttonColorScheme,
@@ -764,6 +740,24 @@ const plots = {
     }
   },
   doubling: {
+    scaleX: (params, domain, range) => d3.scaleUtc(domain, range),
+    scaleY: (params, domain, range) => d3.scaleLinear(domain, range),
+    curves: prepareDoublingTimeData,
+    fixState: (state) => {
+      if (state.params.doubling.logplot) {
+        updateState({ params: { doubling: { logplot: false } } })
+        return true
+      }
+      if (state.params.doubling.align) {
+        updateState({ params: { doubling: { align: false } } })
+        return true
+      }
+      if (state.params.doubling.normalize) {
+        updateState({ params: { doubling: { normalize: false } } })
+        return true
+      }
+      return false
+    },
     icon: 'double_arrow',
     nav: [
       buttonColorScheme,
