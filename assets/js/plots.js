@@ -115,10 +115,10 @@ function * prepareDateOrTrajectoryData (state) {
           previousValue = cumulative
         }
       }
-      if (params.logplot) d.y = Math.max(d.y, 1)
+      if (d.y <= 0) d.y = undefined
       if (state.plot === 'trajectory') {
         d.x = cumulative
-        if (params.logplot) d.x = Math.max(d.x, 1)
+        if (d.x <= 0) d.x = undefined
       } else if (!params.align) {
         d.x = d.date
       } else {
