@@ -1,7 +1,7 @@
 /* This module is the interface between main.js and the time-series data. */
 
-import * as jh from './jh.js'
-import * as owid from './owid.js'
+import * as jh from './data_jh.js'
+import * as owid from './data_owid.js'
 
 /* This dict holds the available time series data
  * (it is filled on-demand, so we don't re-fetch remote data and we only fetch it when needed). */
