@@ -275,6 +275,7 @@ export function drawNav (state) {
 
   for (const item of plot.nav) {
     const button = document.createElement('div')
+    button.classList.add('button')
     if (item.text) {
       const text = document.createTextNode(fromConstantOrCallable(item.text, state))
       button.appendChild(text)

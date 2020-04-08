@@ -148,54 +148,64 @@ nav {
   }
 }
 
-nav > div {
+div.button {
   border-radius: 20px;
   font-family: monospace;
   font-size: large;
-  height: 40px;
   line-height: 40px;
-  margin: 5px;
   text-align: center;
+  height: 40px;
+  margin: 5px;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
   width: 40px;
+  overflow: visible;
 }
 
-nav > div > i.material-icons {
+div.button > i.material-icons {
   margin: 8px 0;
+  display: inline-block;
 }
 
-nav > div > div {
-  border-radius: 1em;
-  display: block;
-  font-family: "Times", "Georgia", serif;
-  font-size: large;
-  font-weight: normal;
-  left: 7rem;
-  padding: 0.5em 1em 0.5em 1em;
+div.button > div {
+  display: inline-block;
+  left: 50px;
   position: absolute;
   text-align: left;
-  top: 6rem;
-  visibility: hidden;
 }
 
-nav > div:not(.disabled) {
+div.button > div,
+#tooltip {
+  font-family: sans-serif;
+  border: 2px solid;
+  border-radius: 10px;
+  font-size: small;
+  line-height: normal;
+  padding: 0.5rem;
+  visibility: hidden;
+  z-index: 10;
+}
+
+#tooltip {
+  position: fixed;
+}
+
+div.button:not(.disabled) {
   cursor: pointer;
 }
 
-nav > div:not(.disabled):hover > div {
+div.button:not(.disabled):hover > div {
   visibility: visible;
 }
 
 @media only screen and (hover: none) {
-  nav > div:hover {
+  div.button:hover {
     background-color: inherit;
   }
 
-  nav > div:hover > div {
-    background-color: inherit;
+  div.button:hover > div {
     visibility: hidden;
   }
 }
@@ -217,14 +227,4 @@ nav > div:not(.disabled):hover > div {
 
 .loading .loading-animation {
   display: block;
-}
-
-#tooltip {
-  border: 2px solid;
-  border-radius: 10px;
-  font-size: large;
-  padding: 0.5rem;
-  position: fixed;
-  visibility: hidden;
-  z-index: 10;
 }
