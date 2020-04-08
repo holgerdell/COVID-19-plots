@@ -556,10 +556,7 @@ function initSearch () {
 function toggle (key) {
   return () => {
     const state = getState()
-    const update = { params: {} }
-    update.params[state.plot] = {}
-    update.params[state.plot][key] = !state.params[state.plot][key]
-    updateState(update)
+    updateState({ params: { [state.plot]: { [key]: !state.params[state.plot][key] } } })
   }
 }
 
@@ -573,9 +570,7 @@ function cycle (key, values, stepsize) {
   const state = getState()
   const oldIndex = values.indexOf(state[key])
   const newIndex = (oldIndex + stepsize + values.length) % values.length
-  const update = { }
-  update[key] = values[newIndex]
-  updateState(update)
+  updateState({ [key]: values[newIndex] })
 }
 
 const nextDataSet = () => cycle('dataset', data.availableDatasets(), +1)
