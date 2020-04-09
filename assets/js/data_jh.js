@@ -6,11 +6,11 @@ const KEY_STATE = 'Province/State'
 const KEY_LATITUDE = 'Lat'
 const KEY_LONGITUDE = 'Long'
 
-export const TYPE_CONFIRMED = 'confirmed'
 export const TYPE_DEATHS = 'deaths'
+export const TYPE_CONFIRMED = 'confirmed'
 export const TYPE_RECOVERED = 'recovered'
 
-export const types = [TYPE_CONFIRMED, TYPE_DEATHS, TYPE_RECOVERED]
+export const types = [TYPE_DEATHS, TYPE_CONFIRMED, TYPE_RECOVERED]
 
 export const load = (type) => {
   const URL = `https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_${type}_global.csv`

@@ -6,10 +6,10 @@ import * as countries from './countries.js'
 const URL = 'https://covid.ourworldindata.org/data/ecdc/full_data.csv'
 export const KEY_DATE = 'date'
 export const KEY_COUNTRY = 'location'
-export const TYPE_CASES = 'total_cases'
 export const TYPE_DEATHS = 'total_deaths'
+export const TYPE_CASES = 'total_cases'
 
-export const types = [TYPE_CASES, TYPE_DEATHS]
+export const types = [TYPE_DEATHS, TYPE_CASES]
 
 export const load = () => {
   return new Promise(function (resolve, reject) {

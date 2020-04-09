@@ -1,11 +1,11 @@
 # COVID-19 plots
 
-Some plots. Parameters can be chosen using the URL. Pull requests welcome.
+Some plots. Parameters can be shared using the URL. Pull requests welcome.
 
-For example:
-<https://holgerdell.github.io/COVID-19-plots/index.html?normalize=true&logplot=true&countries=China;Italy;South%20Korea>
+For example: Compare confirmed deaths in China, United States, and Italy in a per-capita log-plot over time:
+<https://holgerdell.github.io/COVID-19-plots/#%7B%22params%22%3A%7B%22calendar%22%3A%7B%22normalize%22%3Atrue%2C%22logplot%22%3Atrue%7D%7D%2C%22countries%22%3A%5B%22China%22%2C%22United%20States%22%2C%22Italy%22%5D%7D>
 
-URL parameter `dataset` can be set to `owid_total_cases` (default), `owid_total_deaths`, `jh_confirmed`, `jh_deaths`, and `jh_recovered`.
+URL parameter `dataset` can be set to `owid_total_deaths` (default), `owid_total_cases`, `jh_deaths`, `jh_confirmed`, and `jh_recovered`.
 
 # Development
 
