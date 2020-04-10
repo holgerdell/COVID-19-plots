@@ -2,39 +2,12 @@ import { updateState } from './state.js'
 import plots from './plots.js'
 import * as countries from './countries.js'
 import * as data from './data.js'
-import * as string from './lib/string.js'
 import color from './color.js'
 
 /* Style configuration */
 const PLOT_CIRCLE_RADIUS = 3
 const PLOT_CIRCLE_HOVERRADIUS = 15
 const PLOT_LINE_STROKE_WIDTH = 3
-
-/** Get a nice label for the y-axis
-  * @param {Dictionary} state is the current state
-  *
-  * @return {String} human-readable description of the scale of the y-axis
-  */
-function ylabel (state) {
-  let ylabel = ''
-  ylabel += string.capitalize(state.plot)
-  ylabel += ' plot for '
-  ylabel += data.describe(state.dataset)
-  if (state.params[state.plot].cumulative === false) {
-    ylabel += ' per day'
-  }
-  if (state.params[state.plot].normalize) {
-    ylabel += ' (per 100,000 inhabitants)'
-  }
-  ylabel += ' [dataset ' + state.dataset + ']'
-  if (state.params[state.plot].logplot) {
-    ylabel += ' [log-plot]'
-  }
-  if (state.params[state.plot].smooth) {
-    ylabel += ' [smooth]'
-  }
-  return ylabel
-}
 
 function getTooltip (d) {
   let html = d.country
@@ -104,6 +77,11 @@ export async function drawPlot (state) {
     .classed('xaxis', true)
     .call(d3.axisBottom(x))
     .attr('transform', `translate(0,${height - margin.bottom})`)
+    .call((g) => g.select('.tick:last-of-type text').clone()
+      .attr('y', 30)
+      .attr('text-anchor', 'end')
+      .attr('font-weight', 'bold')
+      .text(fromConstantOrCallable(plot.labelX, params, data.describe(state.dataset))))
 
   /* y is a function that maps data points to y-coordinates on-screen */
   const y = plot.scaleY(params, [ymin, ymax], [height - margin.bottom, margin.top])
@@ -119,7 +97,7 @@ export async function drawPlot (state) {
       .attr('x', 3)
       .attr('text-anchor', 'start')
       .attr('font-weight', 'bold')
-      .text(ylabel(state)))
+      .text(fromConstantOrCallable(plot.labelY, params, data.describe(state.dataset))))
 
   /* Transition setting for curve movement */
   const MOVE_TRANSITION = d3.transition('move')
@@ -315,6 +293,6 @@ export function updateColorScheme (state) {
   d3.select('body').classed('color-scheme-light', state.colorScheme === 'light')
 }
 
-function fromConstantOrCallable (x, state) {
-  return (x instanceof Function) ? x(state) : x
+function fromConstantOrCallable (x, arg, opt = undefined) {
+  return (x instanceof Function) ? x(arg, opt) : x
 }

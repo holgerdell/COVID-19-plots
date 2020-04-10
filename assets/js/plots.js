@@ -236,8 +236,19 @@ const buttonNormalize = {
 
 const plots = {
   calendar: {
-    scaleX: (params, domain, range) => params.align ? d3.scaleLinear(domain, range).nice() : d3.scaleUtc(domain, range),
-    scaleY: (params, domain, range) => params.logplot ? d3.scaleLog(domain, range) : d3.scaleLinear(domain, range),
+    scaleX: (params, domain, range) => params.align ? d3.scaleLinear(domain, range).nice() : d3.scaleUtc(domain, range).nice(),
+    scaleY: (params, domain, range) => params.logplot ? d3.scaleLog(domain, range).nice() : d3.scaleLinear(domain, range).nice(),
+    labelX: (params, cases = 'cases') => (params.align
+      ? (params.normalize
+        ? `days after ${ALIGN_THRESHOLD_NORMALIZED} ${cases} per 100,000`
+        : `days after ${ALIGN_THRESHOLD} ${cases}`)
+      : 'Date'),
+    labelY: (params, cases = 'cases') => (params.cumulative
+      ? `Total ${cases} so far`
+      : `New ${cases}`) +
+      (params.normalize ? '' : ' per 100,000 inhabitants') +
+      (params.smooth ? ' [smooth]' : '') +
+      (params.logplot ? ' [log-scale]' : ''),
     curves: prepareDateOrTrajectoryData,
     fixState: (state) => {
       // cannot be both logplot and non-cumulative ?
@@ -292,8 +303,15 @@ const plots = {
     }
   },
   trajectory: {
-    scaleX: (params, domain, range) => params.logplot ? d3.scaleLog(domain, range) : d3.scaleLinear(domain, range),
-    scaleY: (params, domain, range) => params.logplot ? d3.scaleLog(domain, range) : d3.scaleLinear(domain, range),
+    scaleX: (params, domain, range) => params.logplot ? d3.scaleLog(domain, range).nice() : d3.scaleLinear(domain, range).nice(),
+    scaleY: (params, domain, range) => params.logplot ? d3.scaleLog(domain, range).nice() : d3.scaleLinear(domain, range).nice(),
+    labelX: (params, cases = 'cases') => `Total ${cases} so far` +
+        (params.normalize ? '' : ' per 100,000 inhabitants') +
+        (params.logplot ? ' [log-scale]' : ''),
+    labelY: (params, cases = 'cases') => `New ${cases}` +
+      (params.normalize ? '' : ' per 100,000 inhabitants') +
+      (params.smooth ? ' [smooth]' : '') +
+      (params.logplot ? ' [log-scale]' : ''),
     curves: prepareDateOrTrajectoryData,
     icon: 'trending_down',
     nav: [
@@ -319,8 +337,11 @@ const plots = {
     }
   },
   doubling: {
-    scaleX: (params, domain, range) => d3.scaleUtc(domain, range),
-    scaleY: (params, domain, range) => d3.scaleLinear(domain, range),
+    scaleX: (params, domain, range) => d3.scaleUtc(domain, range).nice(),
+    scaleY: (params, domain, range) => d3.scaleLinear(domain, range).nice(),
+    labelX: 'Date',
+    labelY: (params, cases = 'cases') => `Days since last doubling of ${cases}` +
+      (params.smooth ? ' [smooth]' : ''),
     curves: prepareDoublingTimeData,
     icon: 'double_arrow',
     nav: [
