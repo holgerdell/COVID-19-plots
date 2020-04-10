@@ -246,7 +246,7 @@ const plots = {
     labelY: (params, cases = 'cases') => (params.cumulative
       ? `Total ${cases} so far`
       : `New ${cases}`) +
-      (params.normalize ? '' : ' per 100,000 inhabitants') +
+      (params.normalize ? ' per 100,000 inhabitants' : '') +
       (params.smooth ? ' [smooth]' : '') +
       (params.logplot ? ' [log-scale]' : ''),
     curves: prepareDateOrTrajectoryData,
@@ -306,10 +306,10 @@ const plots = {
     scaleX: (params, domain, range) => params.logplot ? d3.scaleLog(domain, range).nice() : d3.scaleLinear(domain, range).nice(),
     scaleY: (params, domain, range) => params.logplot ? d3.scaleLog(domain, range).nice() : d3.scaleLinear(domain, range).nice(),
     labelX: (params, cases = 'cases') => `Total ${cases} so far` +
-        (params.normalize ? '' : ' per 100,000 inhabitants') +
+        (params.normalize ? ' per 100,000 inhabitants' : '') +
         (params.logplot ? ' [log-scale]' : ''),
     labelY: (params, cases = 'cases') => `New ${cases}` +
-      (params.normalize ? '' : ' per 100,000 inhabitants') +
+      (params.normalize ? ' per 100,000 inhabitants' : '') +
       (params.smooth ? ' [smooth]' : '') +
       (params.logplot ? ' [log-scale]' : ''),
     curves: prepareDateOrTrajectoryData,
