@@ -167,29 +167,37 @@ div.button {
 div.button > i.material-icons {
   margin: 8px 0;
   display: inline-block;
+  position: relative;
+  z-index: 20;
 }
 
 div.button > div {
-  display: inline-block;
-  left: 50px;
-  position: absolute;
-  text-align: left;
-}
-
-div.button > div,
-#tooltip {
-  font-family: sans-serif;
-  border: 2px solid;
-  border-radius: 10px;
-  font-size: small;
-  line-height: normal;
-  padding: 0.5rem;
   visibility: hidden;
   z-index: 10;
+  display: inline-block;
+  left: 25px;
+  position: absolute;
+  text-align: left;
+  vertical-align: middle;
+  padding-left: 30px;
+  padding-right: 1rem;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  height: 36px;
+  line-height: 36px;
+  font-size: large;
+  font-family: Georgia, 'Times New Roman', Times, serif;
 }
 
 #tooltip {
+  visibility: hidden;
+  z-index: 9;
+  padding: 0.5rem;
+  border-radius: 10px;
   position: fixed;
+  line-height: normal;
+  font-size: small;
+  font-family: sans-serif;
 }
 
 div.button:not(.disabled) {

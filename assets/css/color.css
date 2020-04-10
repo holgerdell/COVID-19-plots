@@ -3,10 +3,14 @@ body.color-scheme-light {
   color: rgba(0, 0, 0, 0.7);
 }
 
-body.color-scheme-light div.button > div,
 body.color-scheme-light #creator a,
 body.color-scheme-light #legend > .choices > .curve > span.label {
   color: black;
+}
+
+body.color-scheme-light div.button > div {
+  color: black;
+  background-color: inherit;
 }
 
 body.color-scheme-light div.button.disabled {
@@ -42,8 +46,7 @@ body.color-scheme-light div.button.list {
   background-color: #777;
 }
 
-body.color-scheme-light #tooltip,
-body.color-scheme-light div.button > div {
+body.color-scheme-light #tooltip {
   border-color: #777;
   background-color: #dd0;
 }
@@ -53,10 +56,14 @@ body.color-scheme-dark {
   color: rgba(255, 255, 255, 0.7);
 }
 
-body.color-scheme-dark div.button > div,
 body.color-scheme-dark #creator a,
 body.color-scheme-dark #legend > .choices > .curve > span.label {
   color: white;
+}
+
+body.color-scheme-dark div.button > div {
+  color: white;
+  background-color: inherit;
 }
 
 body.color-scheme-dark nav,
