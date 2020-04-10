@@ -9,7 +9,7 @@ body.color-scheme-light #legend > .choices > .curve > span.label {
 }
 
 body.color-scheme-light div.button > div {
-  color: black;
+  color: inherit;
   background-color: inherit;
 }
 
@@ -62,7 +62,7 @@ body.color-scheme-dark #legend > .choices > .curve > span.label {
 }
 
 body.color-scheme-dark div.button > div {
-  color: white;
+  color: inherit;
   background-color: inherit;
 }
 
@@ -99,7 +99,6 @@ body.color-scheme-dark div.button.toggled {
   background-color: #222;
 }
 
-body.color-scheme-dark #tooltip,
-body.color-scheme-dark div.button > div {
+body.color-scheme-dark #tooltip {
   background-color: #220;
 }
