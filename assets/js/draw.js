@@ -137,6 +137,7 @@ export async function drawPlot (state) {
       },
       function (update) {
         update.select('circle.drawarea')
+          .transition(MOVE_TRANSITION)
           .style('fill', d => color(d.countryIndex, state.countries.length))
           .attr('cx', d => x(d.x))
           .attr('cy', d => y(d.y))
