@@ -185,7 +185,7 @@ const buttonColorScheme = {
 
 const buttonDataset = {
   icon: 'folder',
-  tooltip: 'Cycle through available datasets [d]',
+  tooltip: state => `Current dataset is '${state.dataset}'. Available datasets are: ${Object.values(data.availableDatasets()).join(', ')}. [d]`,
   style: {
     backgroundColor: state => {
       const datasets = data.availableDatasets()
@@ -200,7 +200,9 @@ const buttonDataset = {
 
 const buttonSmooth = {
   icon: 'gesture',
-  tooltip: 'Take average of last three measurements [s]',
+  tooltip: state => (state.params[state.plot].smooth
+    ? 'Disable taking average of last three measurements'
+    : 'Take average of last three measurements') + ' [s]',
   classList: {
     toggled: state => state.params[state.plot].smooth
   },
@@ -209,7 +211,11 @@ const buttonSmooth = {
 
 const buttonLogplot = {
   icon: 'linear_scale',
-  tooltip: 'Switch to log-plot [l]',
+  tooltip: state => (state.params[state.plot].logplot
+    ? 'Switch to linear scale'
+    : (state.plot === 'trajectory'
+      ? 'Switch to log-log-plot'
+      : 'Switch to log-plot')) + ' [l]',
   classList: {
     toggled: state => state.params[state.plot].logplot,
     disabled: state => state.params[state.plot].cumulative === false
@@ -219,7 +225,9 @@ const buttonLogplot = {
 
 const buttonNormalize = {
   icon: 'supervisor_account',
-  tooltip: 'Normalize by population [n]',
+  tooltip: state => (state.params[state.plot].normalize
+    ? 'Disable normalization by population'
+    : 'Normalize by population') + ' [n]',
   classList: {
     toggled: state => state.params[state.plot].normalize
   },
