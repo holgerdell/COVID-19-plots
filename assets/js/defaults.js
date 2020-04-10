@@ -20,6 +20,7 @@ export const state = {
       smooth: false
     },
     trajectory: {
+      normalize: true,
       logplot: true,
       smooth: true
     },

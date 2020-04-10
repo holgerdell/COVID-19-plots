@@ -207,6 +207,25 @@ const buttonSmooth = {
   onClick: toggleSmooth
 }
 
+const buttonLogplot = {
+  icon: 'linear_scale',
+  tooltip: 'Switch to log-plot [l]',
+  classList: {
+    toggled: state => state.params[state.plot].logplot,
+    disabled: state => state.params[state.plot].cumulative === false
+  },
+  onClick: toggleLog
+}
+
+const buttonNormalize = {
+  icon: 'supervisor_account',
+  tooltip: 'Normalize by population [n]',
+  classList: {
+    toggled: state => state.params[state.plot].normalize
+  },
+  onClick: toggleNormalize
+}
+
 const plots = {
   calendar: {
     scaleX: (params, domain, range) => params.align ? d3.scaleLinear(domain, range).nice() : d3.scaleUtc(domain, range),
@@ -234,23 +253,8 @@ const plots = {
         },
         onClick: toggleCumulative
       },
-      {
-        icon: 'linear_scale',
-        tooltip: 'Switch to log-plot [l]',
-        classList: {
-          toggled: state => state.params.calendar.logplot,
-          disabled: state => !state.params.calendar.cumulative
-        },
-        onClick: toggleLog
-      },
-      {
-        icon: 'supervisor_account',
-        tooltip: 'Normalize by population [n]',
-        classList: {
-          toggled: state => state.params.calendar.normalize
-        },
-        onClick: toggleNormalize
-      },
+      buttonLogplot,
+      buttonNormalize,
       {
         icon: state => state.params.calendar.align ? 'call_merge' : 'call_split',
         tooltip: state => state.params.calendar.normalize
@@ -288,14 +292,8 @@ const plots = {
       buttonColorScheme,
       buttonPlot,
       buttonDataset,
-      {
-        icon: 'linear_scale',
-        tooltip: 'Switch to log-plot [l]',
-        classList: {
-          toggled: state => state.params.trajectory.logplot
-        },
-        onClick: toggleLog
-      },
+      buttonNormalize,
+      buttonLogplot,
       buttonSmooth
     ],
     shortcuts: (event) => {
