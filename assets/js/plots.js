@@ -201,8 +201,8 @@ const buttonDataset = {
 const buttonSmooth = {
   icon: 'gesture',
   tooltip: state => (state.params[state.plot].smooth
-    ? 'Disable taking average of last three measurements'
-    : 'Take average of last three measurements') + ' [s]',
+    ? `Disable taking average of last ${SMOOTHNESS_PARAMETER} measurements`
+    : `Take average of last ${SMOOTHNESS_PARAMETER} measurements`) + ' [s]',
   classList: {
     toggled: state => state.params[state.plot].smooth
   },
