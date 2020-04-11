@@ -74,7 +74,7 @@ main {
 }
 
 #legend > .choices > .curve > span.avatar {
-  border-radius: 20px;
+  border-radius: 50%;
   display: block;
   float: left;
   font-family: monospace;
@@ -147,7 +147,7 @@ nav {
 }
 
 div.button {
-  border-radius: 20px;
+  border-radius: 50%;
   font-family: monospace;
   font-size: large;
   line-height: 40px;
