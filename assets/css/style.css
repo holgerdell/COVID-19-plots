@@ -1,15 +1,16 @@
 body {
   display: grid;
   font-family: "Times", "Georgia", serif;
-  grid-gap: 0;
+  gap: 0;
   grid-template-areas:
     "main   legend"
-    "nav    nav";
-  grid-template-columns: 1fr 0;
-  grid-template-rows: auto max-content;
+    "nav    legend";
+  grid-template-columns: 1fr 50px;
+  grid-template-rows: 1fr 50px;
   height: 100vh;
   margin: 0;
   padding: 0;
+  overflow: hidden;
 }
 
 #creator {
@@ -20,37 +21,20 @@ body {
   font-size: small;
 }
 
-@media only screen and (min-width: 500px) {
-  body {
-    grid-template-areas:
-      "header legend"
-      "main   legend"
-      "nav    nav";
-    grid-template-columns: 1fr auto;
-    grid-template-rows: 0 auto max-content;
-  }
-}
-
 @media only screen and (min-width: 700px) {
   body {
-    grid-template-areas:
-      "nav header legend"
-      "nav main   legend";
-    grid-template-columns: max-content 1fr auto;
-    grid-template-rows: 0 auto;
+    grid-template-areas: "nav main legend";
+    grid-template-columns: 50px 1fr 200px;
+    grid-template-rows: 1fr;
   }
 }
-
-header { grid-area: header; }
 
 main {
   grid-area: main;
-  overflow: hidden;
 }
 
 #legend {
   grid-area: legend;
-  width: 200px;
 }
 
 #legend > .choices {
@@ -122,27 +106,26 @@ h1 {
 
 @media only screen and (min-width: 700px) {
   h1 { font-size: 3vw; }
-  header { font-size: 2vw; }
 }
 
 nav {
-  display: grid;
   grid-area: nav;
-  grid-gap: 0;
+  display: flex;
 }
 
 @media only screen and (max-width: 699px) {
   nav {
-    grid-template-columns: repeat(20, max-content);
-    grid-template-rows: 1;
+    flex-direction: row;
+    justify-content: space-evenly;
+    height: 50px;
   }
 }
 
 @media only screen and (min-width: 700px) {
   nav {
-    grid-template-columns: 1fr;
-    grid-template-rows: repeat(20, max-content);
-    padding-top: 1em;
+    flex-direction: column;
+    padding-top: 1rem;
+    width: 50px;
   }
 }
 
@@ -185,6 +168,18 @@ div.button > div {
   line-height: 36px;
   font-size: large;
   font-family: Georgia, 'Times New Roman', Times, serif;
+}
+
+@media only screen and (max-width: 699px) {
+  div.button > div {
+    left: 0;
+    bottom: 50px;
+    padding: 1rem;
+    font-size: smaller;
+    display: block;
+    line-height: normal;
+    height: auto;
+  }
 }
 
 #tooltip {
