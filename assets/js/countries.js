@@ -73,17 +73,17 @@ export function * getAll (first = [], restrict) {
   if (countries === undefined) {
     console.error('Must load data first')
   } else {
+    const selected = c => restrict === undefined || restrict.has(c)
     for (const c of first) {
-      yield countries[c]
+      if (selected(c)) yield countries[c]
     }
     first = new Set(first)
-    const seq = (restrict !== undefined) ? restrict : Object.keys(countries)
-    if (!first.has('World') && seq.has('World') && countries.World !== undefined) {
-      yield countries.World
+    if (countries.World !== undefined && !first.has('World')) {
+      if (selected('World')) yield countries.World
     }
-    for (const c of seq) {
+    for (const c of Object.keys(countries)) {
       if (!first.has(c) && c !== 'World' && countries[c] !== undefined) {
-        yield countries[c]
+        if (selected(c)) yield countries[c]
       }
     }
   }
