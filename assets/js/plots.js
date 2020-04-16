@@ -129,7 +129,7 @@ function * prepareDateOrTrajectoryData (state) {
         }
       }
     }
-    countryData.curve = countryData.curve.filter((d) => d.x !== undefined && d.y !== undefined)
+    countryData.curve = countryData.curve.filter(d => d.x !== undefined && d.y !== undefined)
     yield countryData
   }
 }
