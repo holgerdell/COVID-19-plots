@@ -121,19 +121,21 @@ export async function drawPlot (state) {
           .attr('cx', (d) => x(d.x))
           .attr('cy', (d) => y(d.y))
           .attr('r', PLOT_CIRCLE_HOVERRADIUS)
-          .on('mouseover', function (d, _) {
+          .on('mouseenter', function (d) {
             d3.select(this.parentNode).select('circle.drawarea')
               .transition('expand').attr('r', 2 * PLOT_CIRCLE_RADIUS)
             tooltip.html(getTooltip(d))
-            return tooltip.style('visibility', 'visible')
+            tooltip.style('visibility', 'visible')
           })
-          .on('mousemove', () => tooltip
-            .style('top', (d3.event.pageY - 15) + 'px')
-            .style('right', (document.body.offsetWidth - d3.event.pageX + 20) + 'px'))
-          .on('mouseout', function (_) {
+          .on('mousemove', () => {
+            tooltip
+              .style('top', (d3.event.pageY - 15) + 'px')
+              .style('right', (document.body.offsetWidth - d3.event.pageX + 20) + 'px')
+          })
+          .on('mouseleave', function () {
             d3.select(this.parentNode).select('circle.drawarea')
               .transition('expand').attr('r', PLOT_CIRCLE_RADIUS)
-            return tooltip.style('visibility', 'hidden')
+            tooltip.style('visibility', 'hidden')
           })
         return g
       },
@@ -198,7 +200,7 @@ export function drawLegend (state) {
         .classed('label', true)
         .text(c => c.country)
       item
-        .on('click', function (c) {
+        .on('click', c => {
           const state = getState()
           const update = { }
           if (c.isSelected) {
@@ -210,7 +212,7 @@ export function drawLegend (state) {
           }
           updateState(update)
         })
-        .on('mouseover', function (c) {
+        .on('mouseenter', c => {
           svg.selectAll('path')
             .filter(d => (d && d.countryName === c.country))
             .transition('expand2').attr('stroke-width', 2 * PLOT_LINE_STROKE_WIDTH)
@@ -226,12 +228,12 @@ export function drawLegend (state) {
             .style('filter', 'grayscale(100%)')
             .style('opacity', 0.5)
           tooltip.html('Population: ' + c.population.toLocaleString())
-          return tooltip.style('visibility', 'visible')
+          tooltip.style('visibility', 'visible')
         })
         .on('mousemove', () => tooltip
           .style('top', (d3.event.pageY - 15) + 'px')
           .style('right', (document.body.offsetWidth - d3.event.pageX + 20) + 'px'))
-        .on('mouseout', function (c) {
+        .on('mouseleave', c => {
           svg.selectAll('path')
             .filter(d => (d && d.countryName === c.country))
             .transition('expand2').attr('stroke-width', PLOT_LINE_STROKE_WIDTH)
@@ -246,7 +248,7 @@ export function drawLegend (state) {
             .filter(d => d && d.country !== c.country)
             .style('filter', '')
             .style('opacity', 1)
-          return tooltip.style('visibility', 'hidden')
+          tooltip.style('visibility', 'hidden')
         })
     },
     update => {
