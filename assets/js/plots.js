@@ -15,6 +15,8 @@ const ALIGN_THRESHOLD = 100 // align to first day with >= 100 cases
 
 const SMOOTHNESS_PARAMETER = 3
 
+const REPRODUCTION_WINDOW = 4
+
 function setField (points, source = 'value', target = 'y') {
   for (const d of points) {
     d[target] = d[source]
@@ -37,6 +39,31 @@ function smoothen (points, field = 'y') {
     buffer.splice(0, 1)
     buffer.push(d[field])
     d[field] = buffer.reduce((a, b) => a + b) / buffer.length
+  }
+}
+
+/* given a sequence, divide value by value from four days ago */
+function reproduction (points, field = 'y') {
+  const buffer = []
+  for (let j = 0; j < REPRODUCTION_WINDOW; ++j) {
+    buffer.push(1)
+  }
+  for (const d of points) {
+    buffer.push(d[field])
+    if (buffer[0] >= 1) {
+      d[field] = d[field] / buffer[0]
+    }
+    buffer.splice(0, 1)
+  }
+}
+
+/* given a sequence of total cases per day, turn them into daily new cases */
+function cumulativeToDeltas (points, field = 'y') {
+  let prev = 0
+  for (const d of points) {
+    if (!isNaN(d[field]) && d[field] !== undefined) {
+      [prev, d[field]] = [d[field], d[field] - prev]
+    }
   }
 }
 
@@ -101,23 +128,17 @@ function * prepareDateOrTrajectoryData (state) {
     setField(countryData.curve, 'value', 'y')
     if (params.normalize) multiply(countryData.curve, 'y', 100000 / countries.getInfo(countryData.countryName).population)
     if (params.smooth) smoothen(countryData.curve, 'y')
+    setField(countryData.curve, 'y', 'cumulative')
 
     const threshold = (params.normalize) ? ALIGN_THRESHOLD_NORMALIZED : ALIGN_THRESHOLD
     const firstDateAboveThreshold = getFirstDateAboveThreshold(countryData.curve, threshold, 'y')
 
-    let previousValue = 0
+    if (!params.cumulative || state.plot === 'trajectory') cumulativeToDeltas(countryData.curve, 'y')
+
     for (const d of countryData.curve) {
-      const cumulative = d.y
-      d.countryIndex = countryData.countryIndex
-      if (!isNaN(d.y) && d.y !== undefined && d.y > 0) {
-        if (!params.cumulative || state.plot === 'trajectory') {
-          d.y -= previousValue
-          previousValue = cumulative
-        }
-      }
       if (d.y <= 0) d.y = undefined
       if (state.plot === 'trajectory') {
-        d.x = cumulative
+        d.x = d.cumulative
         if (d.x <= 0) d.x = undefined
       } else if (!params.align) {
         d.x = d.date
@@ -134,6 +155,20 @@ function * prepareDateOrTrajectoryData (state) {
   }
 }
 
+function * prepareReproductionData (state) {
+  const countryCurves = yieldRawData(state.countries, state.dataset)
+  const params = state.params[state.plot]
+  for (const countryData of countryCurves) {
+    setField(countryData.curve, 'date', 'x')
+    setField(countryData.curve, 'value', 'y')
+    cumulativeToDeltas(countryData.curve, 'y')
+    reproduction(countryData.curve, 'y')
+    if (params.smooth) smoothen(countryData.curve, 'y')
+    countryData.curve = countryData.curve.filter(d => d.x !== undefined && d.y !== undefined && d.y > 0)
+    yield countryData
+  }
+}
+
 function toggle (key) {
   return () => {
     const state = getState()
@@ -146,6 +181,7 @@ function toggle (key) {
 const toggleCumulative = toggle('cumulative')
 const toggleLog = toggle('logplot')
 const toggleNormalize = toggle('normalize')
+const toggleZoom = toggle('zoom')
 const toggleAlign = toggle('align')
 const toggleSmooth = toggle('smooth')
 
@@ -359,6 +395,45 @@ const plots = {
           case 'n': toggleNormalize(); break
           case 'd': nextDataSet(); break
           case 'D': prevDataSet(); break
+          case 's': toggleSmooth(); break
+        }
+      }
+    }
+  },
+  reproduction_number: {
+    scaleX: (params, domain, range) => d3.scaleUtc(domain, range).nice(),
+    scaleY: (params, domain, range) => params.zoom ? d3.scaleLinear([0, 2], range).nice() : d3.scaleLinear(domain, range).nice(),
+    labelX: (params, cases = 'cases') => 'Date',
+    labelY: (params, cases = 'cases') => `Estimated reproduction number of ${cases} (new cases today / new cases 4 days ago)` +
+      (params.smooth ? ' [smooth]' : ''),
+    curves: prepareReproductionData,
+    icon: 'repeat',
+    nav: [
+      buttonColorScheme,
+      buttonPlot,
+      buttonDataset,
+      // buttonAlign,
+      {
+        icon: state => state.params.reproduction_number.zoom ? 'zoom_out' : 'zoom_in',
+        tooltip: state => state.params.reproduction_number.zoom
+          ? 'Zoom out and show full y-range [z]'
+          : 'Zoom in and set y-range to [0,2] [z]',
+        classList: {
+          toggled: state => state.params.reproduction_number.zoom
+        },
+        onClick: toggleZoom
+      },
+      buttonSmooth
+    ],
+    shortcuts: (event) => {
+      if (!event.ctrlKey && !event.altKey) {
+        switch (event.key) {
+          case 'p': nextPlot(); break
+          case 'P': prevPlot(); break
+          case 'd': nextDataSet(); break
+          case 'D': prevDataSet(); break
+          // case 'a': toggleAlign(); break
+          case 'z': toggleZoom(); break
           case 's': toggleSmooth(); break
         }
       }

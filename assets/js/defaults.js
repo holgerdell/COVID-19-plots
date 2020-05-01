@@ -26,6 +26,11 @@ export const state = {
     },
     doubling: {
       smooth: true
+    },
+    reproduction_number: {
+      // align: false,
+      zoom: true,
+      smooth: true
     }
   }
 }
