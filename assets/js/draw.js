@@ -9,7 +9,10 @@ const PLOT_CIRCLE_RADIUS = 3
 const PLOT_CIRCLE_HOVERRADIUS = 15
 const PLOT_LINE_STROKE_WIDTH = 3
 
-const countryColor = (c, state = getState()) => color(c.countryIndex, state.countries.length)
+const countryColor = (d, state = getState()) => {
+  const idx = (d.countryIndex !== undefined) ? d.countryIndex : d.country.countryIndex
+  return color(idx, state.countries.length)
+}
 
 function getTooltip (d) {
   let html = d.country
@@ -52,6 +55,7 @@ export async function drawPlot (state) {
   const countryPoints = []
   for (const c of countryCurves) {
     for (const p of c.curve) {
+      p.country = c
       countryPoints.push(p)
     }
   }
@@ -103,11 +107,11 @@ export async function drawPlot (state) {
 
   /* Transition setting for curve movement */
   const MOVE_TRANSITION = d3.transition('move')
-    .duration(250)
+    .duration(0)
     .ease(d3.easeSinOut)
 
   svg.selectAll('g.countrypoint')
-    .data(countryPoints, function (d) { return d ? d.datestring + d.country : this.id })
+    .data(countryPoints, function (d) { return d ? d.datestring + d.country.countryName : this.id })
     .join(
       function (enter) {
         const g = enter.append('g').classed('countrypoint', true)
