@@ -24,9 +24,6 @@ export const state = {
       logplot: true,
       smooth: true
     },
-    doubling: {
-      smooth: true
-    },
     reproduction_number: {
       // align: false,
       zoom: true,

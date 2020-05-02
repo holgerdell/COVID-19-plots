@@ -77,18 +77,6 @@ function * yieldRawData (countries, dataset) {
   }
 }
 
-function getLastDateBelowThreshold (points, threshold, field = 'y') {
-  let last
-  for (const p of points) {
-    if (p[field] >= threshold) {
-      return (last !== undefined) ? last.date : undefined
-    } else {
-      last = p
-    }
-  }
-  return undefined
-}
-
 function getFirstDateAboveThreshold (points, threshold, field = 'y') {
   for (const p of points) {
     if (p[field] >= threshold) {
@@ -96,29 +84,6 @@ function getFirstDateAboveThreshold (points, threshold, field = 'y') {
     }
   }
   return undefined
-}
-
-function * prepareDoublingTimeData (state) {
-  const countryCurves = yieldRawData(state.countries, state.dataset)
-  const params = state.params[state.plot]
-  for (const countryData of countryCurves) {
-    setField(countryData.curve, 'value', 'y')
-    setField(countryData.curve, 'date', 'x')
-    if (params.smooth) smoothen(countryData.curve, 'y')
-
-    for (const d of countryData.curve) {
-      d.countryIndex = countryData.countryIndex
-      const last = getLastDateBelowThreshold(countryData.curve, d.y / 2, 'y')
-      if (last !== undefined) {
-        d.doublingTime = (d.date - last) / MILLISECONDS_IN_A_DAY
-      } else {
-        d.doublingTime = undefined
-      }
-    }
-    setField(countryData.curve, 'doublingTime', 'y')
-    countryData.curve = countryData.curve.filter((d) => d.x !== undefined && d.y !== undefined)
-    yield countryData
-  }
 }
 
 function * prepareDateOrTrajectoryData (state) {
@@ -356,34 +321,6 @@ const plots = {
       buttonDataset,
       buttonNormalize,
       buttonLogplot,
-      buttonSmooth
-    ],
-    shortcuts: (event) => {
-      if (!event.ctrlKey && !event.altKey) {
-        switch (event.key) {
-          case 'p': nextPlot(); break
-          case 'P': prevPlot(); break
-          case 'l': toggleLog(); break
-          case 'n': toggleNormalize(); break
-          case 'd': nextDataSet(); break
-          case 'D': prevDataSet(); break
-          case 's': toggleSmooth(); break
-        }
-      }
-    }
-  },
-  doubling: {
-    scaleX: (params, domain, range) => d3.scaleUtc(domain, range).nice(),
-    scaleY: (params, domain, range) => d3.scaleLinear(domain, range).nice(),
-    labelX: 'Date',
-    labelY: (params, cases = 'cases') => `Days since last doubling of ${cases}` +
-      (params.smooth ? ' [smooth]' : ''),
-    curves: prepareDoublingTimeData,
-    icon: 'double_arrow',
-    nav: [
-      buttonColorScheme,
-      buttonPlot,
-      buttonDataset,
       buttonSmooth
     ],
     shortcuts: (event) => {

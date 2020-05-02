@@ -18,10 +18,6 @@ This is the plot you see everywhere: The x-axis shows the date and the y-axis th
 This plots the same data, but the x-axis shows the total number of confirmed cases while the y-axis shows the number of new cases on that day.
 We took the idea for this plot from a [minutephysics video](https://youtu.be/54XLXg4fYsc) and Aatish Bhatia's [implementation of the same plot](https://aatishb.com/covidtrends/)
 
-## Doubling time plot
-
-The [doubling time](https://en.wikipedia.org/wiki/Doubling_time) is a key metric in any process that undergoes exponential growth. The x-axis shows the date as in the calendar plot, and the y-axis shows the number of days since the last doubling of the total number of cases has occurred.
-
 ## Reproduction number over time
 
 [Example plot](https://holgerdell.github.io/COVID-19-plots/#%7B%22plot%22%3A%22reproduction_number%22%2C%22countries%22%3A%5B%22Denmark%22%2C%22Germany%22%2C%22Sweden%22%5D%2C%22dataset%22%3A%22owid_total_cases%22%7D)
