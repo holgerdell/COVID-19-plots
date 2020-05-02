@@ -13,11 +13,11 @@ export const state = {
   countries: defaultCountries,
   params: {
     calendar: {
-      align: false,
-      cumulative: true,
+      align: true,
+      cumulative: false,
       normalize: true,
       logplot: true,
-      smooth: false
+      smooth: true
     },
     trajectory: {
       normalize: true,
