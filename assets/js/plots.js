@@ -13,7 +13,7 @@ const MILLISECONDS_IN_A_DAY = 1000 * 60 * 60 * 24
 const ALIGN_THRESHOLD_NORMALIZED = 0.1 // align to first day >= 0.1 cases per 100,000
 const ALIGN_THRESHOLD = 100 // align to first day with >= 100 cases
 
-const SMOOTHNESS_PARAMETER = 3
+const SMOOTHNESS_PARAMETER = 7
 
 const REPRODUCTION_WINDOW = 4
 
@@ -162,8 +162,8 @@ function * prepareReproductionData (state) {
     setField(countryData.curve, 'date', 'x')
     setField(countryData.curve, 'value', 'y')
     cumulativeToDeltas(countryData.curve, 'y')
-    reproduction(countryData.curve, 'y')
     if (params.smooth) smoothen(countryData.curve, 'y')
+    reproduction(countryData.curve, 'y')
     countryData.curve = countryData.curve.filter(d => d.x !== undefined && d.y !== undefined && d.y > 0)
     yield countryData
   }
