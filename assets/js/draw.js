@@ -15,7 +15,7 @@ const countryColor = (d, state = getState()) => {
 }
 
 function getTooltip (d) {
-  let html = d.country
+  let html = d.country.countryName
   if (d.y !== d.value) {
     html += '<br />y: ' + d.y.toLocaleString()
   }
