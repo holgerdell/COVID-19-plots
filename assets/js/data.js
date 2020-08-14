@@ -100,7 +100,7 @@ export function availableDatasets () {
   return owid.types.map((x) => `owid_${x}`) // .concat(jh.types.map((x) => `jh_${x}`))
 }
 
-export const defaultDataset = 'owid_' + owid.TYPE_DEATHS
+export const defaultDataset = 'owid_' + owid.TYPE_CASES
 
 export function describe (dataset) {
   if (dataset === 'jh_' + jh.TYPE_CONFIRMED || dataset === 'owid_' + owid.TYPE_CASES) {

@@ -1,7 +1,7 @@
 import * as data from './data.js'
 
 const defaultCountries = [
-  'China', 'Italy', 'Denmark', 'Germany', 'Sweden', 'Greece', 'France'
+  'United States', 'China', 'Italy', 'Denmark', 'Germany', 'Sweden', 'France'
 ]
 
 /* This dictionary holds the default values for the state
@@ -11,13 +11,14 @@ export const state = {
   colorScheme: 'light',
   dataset: data.defaultDataset,
   countries: defaultCountries,
+  align: 'FULL',
   params: {
     calendar: {
-      align: true,
       cumulative: false,
       normalize: true,
-      logplot: true,
-      smooth: true
+      logplot: false,
+      smooth: true,
+      zoom: true
     },
     trajectory: {
       normalize: true,
@@ -25,7 +26,6 @@ export const state = {
       smooth: true
     },
     reproduction_number: {
-      // align: false,
       zoom: true,
       smooth: true
     }

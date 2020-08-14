@@ -3,7 +3,6 @@
 import { getState, updateState } from './state.js'
 import * as data from './data.js'
 import * as countries from './countries.js' // number of days to average on
-
 import color from './color.js'
 
 /* Time constants */
@@ -12,6 +11,7 @@ const MILLISECONDS_IN_A_DAY = 1000 * 60 * 60 * 24
 /* Align curve threshold */
 const ALIGN_THRESHOLD_NORMALIZED = 0.1 // align to first day >= 0.1 cases per 100,000
 const ALIGN_THRESHOLD = 100 // align to first day with >= 100 cases
+const ALIGN_MODES = ['LAST_28_DAYS', 'FULL', 'FIRST_ABOVE_THRESHOLD']
 
 const SMOOTHNESS_PARAMETER = 7
 
@@ -87,8 +87,10 @@ function getFirstDateAboveThreshold (points, threshold, field = 'y') {
 }
 
 function * prepareDateOrTrajectoryData (state) {
+  console.debug('in plots.')
   const countryCurves = yieldRawData(state.countries, state.dataset)
   const params = state.params[state.plot]
+  const startDate = new Date() - 28 * MILLISECONDS_IN_A_DAY // 28 days ago
   for (const countryData of countryCurves) {
     setField(countryData.curve, 'value', 'y')
     if (params.normalize) multiply(countryData.curve, 'y', 100000 / countries.getInfo(countryData.countryName).population)
@@ -105,19 +107,35 @@ function * prepareDateOrTrajectoryData (state) {
       if (state.plot === 'trajectory') {
         d.x = d.cumulative
         if (isNaN(d.x) || d.x <= 0) d.x = undefined
-      } else if (!params.align) {
-        d.x = d.date
-      } else {
-        if (d.date >= firstDateAboveThreshold) {
-          d.x = (d.date - firstDateAboveThreshold) / MILLISECONDS_IN_A_DAY
-        } else {
-          d.x = undefined
+      } else { // state.plot === 'calendar'
+        switch (state.align) {
+          case 'FULL':
+            d.x = d.date
+            break
+          case 'LAST_28_DAYS':
+            if (d.date >= startDate) {
+              d.x = d.date
+            } else {
+              d.x = undefined
+            }
+            break
+          case 'FIRST_ABOVE_THRESHOLD':
+            if (d.date >= firstDateAboveThreshold) {
+              d.x = (d.date - firstDateAboveThreshold) / MILLISECONDS_IN_A_DAY
+            } else {
+              d.x = undefined
+            }
+            break
+          default:
+            console.error(`unknown value of state.align: ${state.align}`)
+            break
         }
       }
     }
     countryData.curve = countryData.curve.filter(d => d.x !== undefined && d.y !== undefined)
     yield countryData
   }
+  console.debug('done with plots.')
 }
 
 function * prepareReproductionData (state) {
@@ -147,7 +165,6 @@ const toggleCumulative = toggle('cumulative')
 const toggleLog = toggle('logplot')
 const toggleNormalize = toggle('normalize')
 const toggleZoom = toggle('zoom')
-const toggleAlign = toggle('align')
 const toggleSmooth = toggle('smooth')
 
 function cycle (key, values, stepsize) {
@@ -162,6 +179,9 @@ const prevDataSet = () => cycle('dataset', data.availableDatasets(), -1)
 
 const nextPlot = () => cycle('plot', Object.keys(plots), +1)
 const prevPlot = () => cycle('plot', Object.keys(plots), -1)
+
+const nextAlign = () => cycle('align', ALIGN_MODES, +1)
+const prevAlign = () => cycle('align', ALIGN_MODES, -1)
 
 const buttonPlot = {
   icon: state => plots[state.plot].icon,
@@ -199,6 +219,25 @@ const buttonDataset = {
   onClick: nextDataSet
 }
 
+const buttonAlign = {
+  icon: state => state.align === 'FIRST_ABOVE_THRESHOLD' ? 'call_merge' : 'call_split',
+  tooltip: state => `Current alignment mode is '${state.align}'. [a]`,
+  // (state.align === 'FIRST_ABOVE_THRESHOLD')
+  //   ? ('<br/>In the current mode, we align by first day with ' + (state.params[state.plot].normalize
+  //     ? `Align by first day with ${ALIGN_THRESHOLD_NORMALIZED} cases per 100,000 [a]`
+  //     : `Align by first day with ${ALIGN_THRESHOLD} cases [a]`))
+  //   : ''),
+  style: {
+    backgroundColor: state => {
+      return color(ALIGN_MODES.indexOf(state.align), ALIGN_MODES.length)
+    }
+  },
+  classList: {
+    list: true
+  },
+  onClick: nextAlign
+}
+
 const buttonSmooth = {
   icon: 'gesture',
   tooltip: state => (state.params[state.plot].smooth
@@ -234,11 +273,22 @@ const buttonNormalize = {
   onClick: toggleNormalize
 }
 
+const buttonZoom = {
+  icon: state => state.params[state.plot].zoom ? 'zoom_out' : 'zoom_in',
+  tooltip: state => state.params[state.plot].zoom
+    ? 'Zoom out and show full y-range [z]'
+    : 'Zoom in and set y-range to [0,2] [z]',
+  classList: {
+    toggled: state => state.params[state.plot].zoom
+  },
+  onClick: toggleZoom
+}
+
 const plots = {
   calendar: {
-    scaleX: (params, domain, range) => params.align ? d3.scaleLinear(domain, range).nice() : d3.scaleUtc(domain, range).nice(),
+    scaleX: (params, domain, range) => getState().align === 'FIRST_ABOVE_THRESHOLD' ? d3.scaleLinear(domain, range).nice() : d3.scaleUtc(domain, range),
     scaleY: (params, domain, range) => params.logplot ? d3.scaleLog(domain, range).nice() : d3.scaleLinear(domain, range).nice(),
-    labelX: (params, cases = 'cases') => (params.align
+    labelX: (params, cases = 'cases') => (getState().align === 'FIRST_ABOVE_THRESHOLD'
       ? (params.normalize
         ? `days after ${ALIGN_THRESHOLD_NORMALIZED} ${cases} per 100,000`
         : `days after ${ALIGN_THRESHOLD} ${cases}`)
@@ -248,7 +298,8 @@ const plots = {
       : `New ${cases}`) +
       (params.normalize ? ' per 100,000 inhabitants' : '') +
       (params.smooth ? ' [smooth]' : '') +
-      (params.logplot ? ' [log-scale]' : ''),
+      (params.logplot ? ' [log-scale]' : '') +
+      (getState().align === 'LAST_28_DAYS' ? ' [last 28 days only]' : getState().align === 'FIRST_ABOVE_THRESHOLD' ? ' [aligned]' : ''),
     curves: prepareDateOrTrajectoryData,
     icon: 'schedule',
     nav: [
@@ -265,16 +316,7 @@ const plots = {
       },
       buttonLogplot,
       buttonNormalize,
-      {
-        icon: state => state.params.calendar.align ? 'call_merge' : 'call_split',
-        tooltip: state => state.params.calendar.normalize
-          ? `Align by first day with ${ALIGN_THRESHOLD_NORMALIZED} cases per 100,000 [a]`
-          : `Align by first day with ${ALIGN_THRESHOLD} cases [a]`,
-        classList: {
-          toggled: state => state.params.calendar.align
-        },
-        onClick: toggleAlign
-      },
+      buttonAlign,
       buttonSmooth
     ],
     shortcuts: (event) => {
@@ -287,8 +329,10 @@ const plots = {
           case 'n': toggleNormalize(); break
           case 'd': nextDataSet(); break
           case 'D': prevDataSet(); break
-          case 'a': toggleAlign(); break
+          case 'a': nextAlign(); break
+          case 'A': prevAlign(); break
           case 's': toggleSmooth(); break
+          case 'z': toggleZoom(); break
         }
       }
     }
@@ -339,17 +383,7 @@ const plots = {
       buttonColorScheme,
       buttonPlot,
       buttonDataset,
-      // buttonAlign,
-      {
-        icon: state => state.params.reproduction_number.zoom ? 'zoom_out' : 'zoom_in',
-        tooltip: state => state.params.reproduction_number.zoom
-          ? 'Zoom out and show full y-range [z]'
-          : 'Zoom in and set y-range to [0,2] [z]',
-        classList: {
-          toggled: state => state.params.reproduction_number.zoom
-        },
-        onClick: toggleZoom
-      },
+      buttonZoom,
       buttonSmooth
     ],
     shortcuts: (event) => {
@@ -359,7 +393,6 @@ const plots = {
           case 'P': prevPlot(); break
           case 'd': nextDataSet(); break
           case 'D': prevDataSet(); break
-          // case 'a': toggleAlign(); break
           case 'z': toggleZoom(); break
           case 's': toggleSmooth(); break
         }

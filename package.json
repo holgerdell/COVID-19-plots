@@ -8,6 +8,7 @@
   "license": "MIT",
   "dependencies": {},
   "devDependencies": {
+    "eslint-plugin-html": "^6.0.3",
     "http-server": "^0.12.1",
     "standard": "^14.3.3",
     "stylelint": "^13.2.1",
