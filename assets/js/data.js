@@ -97,7 +97,7 @@ export function getTimeSeries (country, dataset) {
   * @return {List} of Strings
   */
 export function availableDatasets () {
-  return owid.types.map((x) => `owid_${x}`).concat(jh.types.map((x) => `jh_${x}`))
+  return owid.types.map((x) => `owid_${x}`) // .concat(jh.types.map((x) => `jh_${x}`))
 }
 
 export const defaultDataset = 'owid_' + owid.TYPE_DEATHS
