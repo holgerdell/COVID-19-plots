@@ -219,7 +219,6 @@ const buttonLogplot = {
       : 'Switch to log-plot')) + ' [l]',
   classList: {
     toggled: state => state.params[state.plot].logplot,
-    disabled: state => state.params[state.plot].cumulative === false
   },
   onClick: toggleLog
 }
@@ -251,15 +250,6 @@ const plots = {
       (params.smooth ? ' [smooth]' : '') +
       (params.logplot ? ' [log-scale]' : ''),
     curves: prepareDateOrTrajectoryData,
-    fixState: (state) => {
-      // cannot be both logplot and non-cumulative ?
-      const logplot = state.params.calendar.logplot && state.params.calendar.cumulative
-      if (logplot !== state.params.calendar.logplot) {
-        updateState({ params: { calendar: { logplot } } })
-        return true
-      }
-      return false
-    },
     icon: 'schedule',
     nav: [
       buttonColorScheme,
