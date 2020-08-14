@@ -101,10 +101,10 @@ function * prepareDateOrTrajectoryData (state) {
     if (!params.cumulative || state.plot === 'trajectory') cumulativeToDeltas(countryData.curve, 'y')
 
     for (const d of countryData.curve) {
-      if (d.y <= 0) d.y = undefined
+      if (isNaN(d.y) || d.y <= 0) d.y = undefined
       if (state.plot === 'trajectory') {
         d.x = d.cumulative
-        if (d.x <= 0) d.x = undefined
+        if (isNaN(d.x) || d.x <= 0) d.x = undefined
       } else if (!params.align) {
         d.x = d.date
       } else {
@@ -218,7 +218,7 @@ const buttonLogplot = {
       ? 'Switch to log-log-plot'
       : 'Switch to log-plot')) + ' [l]',
   classList: {
-    toggled: state => state.params[state.plot].logplot,
+    toggled: state => state.params[state.plot].logplot
   },
   onClick: toggleLog
 }
