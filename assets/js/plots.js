@@ -30,9 +30,9 @@ function multiply (points, field = 'y', factor = 1) {
 }
 
 /* given a sequence of d with a field d.field, smoothen the d.field value */
-function smoothen (points, field = 'y') {
+function smoothen (points, field = 'y', smoothness = SMOOTHNESS_PARAMETER) {
   const buffer = []
-  for (let j = 0; j < SMOOTHNESS_PARAMETER; ++j) {
+  for (let j = 0; j < smoothness; ++j) {
     buffer.push(0)
   }
   for (const d of points) {
