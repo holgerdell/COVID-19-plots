@@ -105,11 +105,6 @@ export async function drawPlot (state) {
       .attr('font-weight', 'bold')
       .text(fromConstantOrCallable(plot.labelY, params, data.describe(state.dataset))))
 
-  /* Transition setting for curve movement */
-  const MOVE_TRANSITION = d3.transition('move')
-    .duration(0)
-    .ease(d3.easeSinOut)
-
   svg.selectAll('g.countrypoint')
     .data(countryPoints, function (d) { return d ? d.datestring + d.country.countryName : this.id })
     .join(
@@ -145,7 +140,6 @@ export async function drawPlot (state) {
       },
       function (update) {
         update.select('circle.drawarea')
-          .transition(MOVE_TRANSITION)
           .style('fill', d => countryColor(d, state))
           .attr('cx', d => x(d.x))
           .attr('cy', d => y(d.y))
@@ -171,7 +165,6 @@ export async function drawPlot (state) {
         .style('stroke', d => countryColor(d, state))
         .attr('d', d => line(d.curve)),
       update => update
-        .transition(MOVE_TRANSITION)
         .style('stroke', d => countryColor(d, state))
         .attr('d', d => line(d.curve)),
       exit => exit.remove()
@@ -219,14 +212,14 @@ export function drawLegend (state) {
         .on('mouseenter', c => {
           svg.selectAll('path')
             .filter(d => (d && d.countryName === c.country))
-            .transition('expand2').attr('stroke-width', 2 * PLOT_LINE_STROKE_WIDTH)
+            .attr('stroke-width', 2 * PLOT_LINE_STROKE_WIDTH)
           svg.selectAll('path')
             .filter(d => (d && d.countryName !== c.country))
             .style('filter', 'grayscale(100%)')
             .style('opacity', 0.5)
           svg.selectAll('circle.drawarea')
             .filter(d => d && d.country === c.country)
-            .transition('expand2').attr('r', 2 * PLOT_CIRCLE_RADIUS)
+            .attr('r', 2 * PLOT_CIRCLE_RADIUS)
           svg.selectAll('circle.drawarea')
             .filter(d => d && d.country !== c.country)
             .style('filter', 'grayscale(100%)')
@@ -240,14 +233,14 @@ export function drawLegend (state) {
         .on('mouseleave', c => {
           svg.selectAll('path')
             .filter(d => (d && d.countryName === c.country))
-            .transition('expand2').attr('stroke-width', PLOT_LINE_STROKE_WIDTH)
+            .attr('stroke-width', PLOT_LINE_STROKE_WIDTH)
           svg.selectAll('path')
             .filter(d => (d && d.countryName !== c.country))
             .style('filter', '')
             .style('opacity', 1)
           svg.selectAll('circle.drawarea')
             .filter(d => d && d.country === c.country)
-            .transition('expand2').attr('r', PLOT_CIRCLE_RADIUS)
+            .attr('r', PLOT_CIRCLE_RADIUS)
           svg.selectAll('circle.drawarea')
             .filter(d => d && d.country !== c.country)
             .style('filter', '')
