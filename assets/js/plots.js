@@ -15,7 +15,7 @@ const ALIGN_MODES = ['LAST_28_DAYS', 'FULL', 'FIRST_ABOVE_THRESHOLD']
 
 const SMOOTHNESS_PARAMETER = 7
 
-const REPRODUCTION_WINDOW = 4
+const REPRODUCTION_WINDOW = 7
 
 function setField (points, source = 'value', target = 'y') {
   for (const d of points) {
@@ -375,7 +375,7 @@ const plots = {
     scaleX: (params, domain, range) => d3.scaleUtc(domain, range).nice(),
     scaleY: (params, domain, range) => params.zoom ? d3.scaleLinear([0, 2], range).nice() : d3.scaleLinear(domain, range).nice(),
     labelX: (params, cases = 'cases') => 'Date',
-    labelY: (params, cases = 'cases') => `Estimated reproduction number of ${cases} (new cases today / new cases 4 days ago)` +
+    labelY: (params, cases = 'cases') => `Estimated reproduction number of ${cases} (new cases today / new cases ${REPRODUCTION_WINDOW} days ago)` +
       (params.smooth ? ' [smooth]' : ''),
     curves: prepareReproductionData,
     icon: 'repeat',
