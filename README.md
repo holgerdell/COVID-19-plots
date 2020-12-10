@@ -53,6 +53,5 @@ Visual Studio Code provides the extensions [chenxsan.vscode-standardjs](https://
 
 # Data Sources:
 
-- Our World in Data <https://ourworldindata.org/coronavirus-source-data> (which, in turn, is sourced from [European Centre for Disease Prevention and Control (ECDC)](https://www.ecdc.europa.eu/en/coronavirus))
-- Johns Hopkins University <https://github.com/CSSEGISandData/COVID-19>
+- Our World in Data <https://ourworldindata.org/coronavirus-source-data> (which, in turn, is sourced from [Johns Hopkins University](https://github.com/CSSEGISandData/COVID-19))
 - <https://github.com/datasets/population/>

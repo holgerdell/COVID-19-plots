@@ -3,7 +3,7 @@ import * as countries from './countries.js'
 /* Retrieve data from Our World in Data
  * https://ourworldindata.org/coronavirus-source-data
  */
-const URL = 'https://covid.ourworldindata.org/data/ecdc/full_data.csv'
+const URL = 'https://covid.ourworldindata.org/data/owid-covid-data.csv'
 export const KEY_DATE = 'date'
 export const KEY_COUNTRY = 'location'
 export const TYPE_DEATHS = 'total_deaths'
