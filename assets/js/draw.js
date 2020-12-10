@@ -120,16 +120,16 @@ export async function drawPlot (state) {
           .attr('cx', (d) => x(d.x))
           .attr('cy', (d) => y(d.y))
           .attr('r', PLOT_CIRCLE_HOVERRADIUS)
-          .on('mouseenter', function (d) {
+          .on('mouseenter', function (_, d) {
             d3.select(this.parentNode).select('circle.drawarea')
               .transition('expand').attr('r', 2 * PLOT_CIRCLE_RADIUS)
             tooltip.html(getTooltip(d))
             tooltip.style('visibility', 'visible')
           })
-          .on('mousemove', () => {
+          .on('mousemove', (e, _) => {
             tooltip
-              .style('top', (d3.event.pageY - 15) + 'px')
-              .style('right', (document.body.offsetWidth - d3.event.pageX + 20) + 'px')
+              .style('top', (e.pageY - 15) + 'px')
+              .style('right', (document.body.offsetWidth - e.pageX + 20) + 'px')
           })
           .on('mouseleave', function () {
             d3.select(this.parentNode).select('circle.drawarea')
@@ -197,7 +197,7 @@ export function drawLegend (state) {
         .classed('label', true)
         .text(c => c.country)
       item
-        .on('click', c => {
+        .on('click', (_, c) => {
           const state = getState()
           const update = { }
           if (c.isSelected) {
@@ -209,7 +209,7 @@ export function drawLegend (state) {
           }
           updateState(update)
         })
-        .on('mouseenter', c => {
+        .on('mouseenter', (_, c) => {
           svg.selectAll('path')
             .filter(d => (d && d.countryName === c.country))
             .attr('stroke-width', 2 * PLOT_LINE_STROKE_WIDTH)
@@ -227,10 +227,10 @@ export function drawLegend (state) {
           tooltip.html('Population: ' + c.population.toLocaleString())
           tooltip.style('visibility', 'visible')
         })
-        .on('mousemove', () => tooltip
-          .style('top', (d3.event.pageY - 15) + 'px')
-          .style('right', (document.body.offsetWidth - d3.event.pageX + 20) + 'px'))
-        .on('mouseleave', c => {
+        .on('mousemove', (e, _) => tooltip
+          .style('top', (e.pageY - 15) + 'px')
+          .style('right', (document.body.offsetWidth - e.pageX + 20) + 'px'))
+        .on('mouseleave', (_, c) => {
           svg.selectAll('path')
             .filter(d => (d && d.countryName === c.country))
             .attr('stroke-width', PLOT_LINE_STROKE_WIDTH)
